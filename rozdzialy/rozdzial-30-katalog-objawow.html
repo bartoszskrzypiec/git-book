@@ -29,7 +29,167 @@
   <h1>Katalog objawów: co widzisz, co to znaczy, co zrobić</h1>
   <p class="subtitle">Ostatnia strona jest indeksem, nie wykładem. Komunikat po lewej, przyczyna w środku, komenda po prawej — i odnośnik do rozdziału, który tłumaczy dlaczego.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Ta strona jest indeksem, nie wykładem. Komunikat po lewej, przyczyna w środku, komenda po prawej.</li>
+      <li>Zanim zaczniesz cokolwiek naprawiać, odpowiedz na jedno pytanie: <strong>czy coś zostało utracone</strong>. W dziewięciu przypadkach na dziesięć odpowiedź brzmi „nie” i wtedy nie ma pośpiechu.</li>
+      <li>Jedyne, co naprawdę ginie, to zmiany, które nigdy nie były commitem. Wszystko, co raz stało się commitem, jest w reflogu.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zanim zaczniesz · jedno pytanie</div>
+    <h2>Czy cokolwiek jest utracone</h2>
+
+    <p>Panika przy gicie bierze się prawie zawsze z tego samego: wygląda, jakby praca zniknęła. Zanim sięgniesz po jakąkolwiek komendę, warto przejść ten jeden rysunek — bo odpowiedź zmienia wszystko, łącznie z tempem.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>czy cos zginelo</span><span>trzy pytania</span></div>
+      <svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drzewo decyzyjne: czy zmiana była commitem, czy jest w reflogu">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="180" y="18" width="260" height="40" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="310" y="43" text-anchor="middle" font-size="10.5" fill="#4fc3c0">czy to bylo kiedykolwiek commitem?</text>
+
+          <path d="M 180 38 L 110 38 L 110 84" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 105 76 L 110 87 L 115 76 Z" fill="#2a2f38"/>
+          <text x="140" y="34" font-size="9.5" fill="#8b909b">nie</text>
+          <rect x="14" y="90" width="196" height="56" rx="8" fill="#1b1e24" stroke="#d2685a"/>
+          <text x="112" y="112" text-anchor="middle" font-size="10" fill="#d2685a">to jedyny przypadek,</text>
+          <text x="112" y="130" text-anchor="middle" font-size="10" fill="#d2685a">w ktorym praca przepada</text>
+
+          <path d="M 440 38 L 510 38 L 510 84" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 505 76 L 510 87 L 515 76 Z" fill="#2a2f38"/>
+          <text x="462" y="34" font-size="9.5" fill="#8b909b">tak</text>
+          <rect x="412" y="90" width="196" height="56" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="510" y="112" text-anchor="middle" font-size="10" fill="#4fc3c0">jest na dysku</text>
+          <text x="510" y="130" text-anchor="middle" font-size="10" fill="#8b909b">git reflog &#8594; git reset --hard</text>
+
+          <text x="14" y="186" font-size="10.5" fill="#8b909b">niezacommitowana zmiana ginie tylko przez: reset --hard, checkout na pliku,</text>
+          <text x="14" y="204" font-size="10.5" fill="#8b909b">clean, albo nadpisanie pliku przez switch &#8212; poza tym nic jej nie rusza</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Prawa gałąź to zdecydowana większość przypadków — i tam nie ma czego ratować, bo nic nie zginęło.</div>
+    </div>
+
+    <p>Jeśli trafiłeś na lewą stronę rysunku, sprawdź jeszcze dwie rzeczy, zanim uznasz sprawę za zamkniętą: czy zmiana nie została odłożona przez <code>git stash</code> i czy edytor nie ma własnej historii lokalnej. Część narzędzi trzyma migawki plików niezależnie od gita i ratuje dokładnie ten przypadek.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Katalog · odmowy i komunikaty</div>
+    <h2>Push nie przechodzi</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Widzisz</th><th>Znaczy</th><th>Robisz</th></tr></thead>
+        <tbody>
+          <tr><td><code>! [rejected] (non-fast-forward)</code></td><td>rozjazd: obie strony mają swoje commity</td><td>sprawdź <code>git status -sb</code>; cudze — pobierz, własne po amendzie — wymuś (R.16, R.17)</td></tr>
+          <tr><td><code>! [rejected] (stale info)</code></td><td>ktoś wypchnął coś od Twojego ostatniego pobrania</td><td><code>git fetch</code>, obejrzyj, dopiero potem decyduj (R.17)</td></tr>
+          <tr><td><code>! [remote rejected] (hook declined)</code></td><td>reguła projektu odrzuciła commity</td><td>przeczytaj linie <code>remote:</code>; zwykle trzeba przepisać commit (R.21)</td></tr>
+          <tr><td><code>protected branches</code></td><td>gałąź chroniona, push niedozwolony</td><td>gałąź funkcyjna plus merge request (R.22)</td></tr>
+          <tr><td><code>could not read Username</code></td><td>brak programu obsługującego poświadczenia</td><td><code>git config --show-origin credential.helper</code> (R.24)</td></tr>
+          <tr><td><code>everything up-to-date</code>, a zmian brak</td><td>commit powstał na innej gałęzi</td><td><code>git log --oneline --all --graph</code>, potem <code>cherry-pick</code> (R.19)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Rozróżnienie <code>[rejected]</code> od <code>[remote rejected]</code> jest najważniejsze w całej tabeli: pierwsze naprawiasz u siebie, drugie wymaga spełnienia reguły.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Katalog · stan repozytorium</div>
+    <h2>Coś jest nie tam, gdzie miało być</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Objaw</th><th>Znaczy</th><th>Robisz</th></tr></thead>
+        <tbody>
+          <tr><td>„You are in detached HEAD state”</td><td>HEAD wskazuje commit, nie gałąź</td><td>masz tam commity: <code>git switch -c nazwa</code>; nie masz: <code>git switch master</code> (R.4)</td></tr>
+          <tr><td>zacommitowałem na złej gałęzi</td><td>HEAD był gdzie indziej, niż myślałeś</td><td><code>git switch -c wlasciwa</code>, potem na starej <code>git reset --hard origin/&lt;stara&gt;</code></td></tr>
+          <tr><td>commit nie zawiera ostatniej poprawki</td><td><code>add</code> skopiował wcześniejszą treść</td><td><code>git add</code> i <code>git commit --amend</code> (R.1, R.13)</td></tr>
+          <tr><td>plik dalej widoczny mimo <code>.gitignore</code></td><td>jest śledzony, więc wzorce go nie dotyczą</td><td><code>git rm --cached plik</code> (R.7)</td></tr>
+          <tr><td>„Your branch is up to date”, a nie jest</td><td>porównanie z lokalną kopią stanu serwera</td><td><code>git fetch</code>, potem sprawdź ponownie (R.9)</td></tr>
+          <tr><td>rebase stanął w połowie</td><td>konflikt przy odtwarzaniu commita</td><td>rozstrzygnij, <code>git add</code>, <code>git rebase --continue</code>; albo <code>--abort</code> (R.11, R.14)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">W żadnym z tych wierszy nic nie zostało utracone — wszystkie dotyczą wskaźników, nie obiektów.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Katalog · praca zniknęła</div>
+    <h2>Odzyskiwanie</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Sytuacja</th><th>Robisz</th></tr></thead>
+        <tbody>
+          <tr><td>nieudany rebase, chcę stan sprzed</td><td><code>git reset --hard ABC-1234@{1}</code> — poprzednia wartość tej gałęzi (R.18)</td></tr>
+          <tr><td>reset --hard wyrzucił commity</td><td><code>git reflog</code>, znajdź skrót sprzed, <code>git reset --hard &lt;sha&gt;</code></td></tr>
+          <tr><td>usunąłem gałąź</td><td>skrót jest w reflogu; <code>git branch nazwa &lt;sha&gt;</code></td></tr>
+          <tr><td>amend nadpisał commit, który był potrzebny</td><td>stary jest w reflogu jako <code>HEAD@{1}</code>; <code>git cherry-pick</code> albo reset</td></tr>
+          <tr><td>reflog nic nie pokazuje</td><td><code>git fsck --lost-found</code> — wypis obiektów bez refów</td></tr>
+          <tr><td>zmiana nigdy nie była commitem</td><td>sprawdź <code>git stash list</code> i historię lokalną edytora; git nic tu nie pomoże</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Pierwsze pięć wierszy to jedna komenda i trzydzieści sekund. Ostatni jest jedynym, który boli.</p>
+
+    <p>Warto pamiętać o jednej zasadzie, która obowiązuje we wszystkich powyższych przypadkach: <strong>nie klonuj repozytorium od nowa</strong>, żeby „zacząć czysto”. Świeży klon nie ma Twojego reflogu, więc wyrzuca dokładnie to, co jest w tym momencie najcenniejsze — jedyny ślad prowadzący do porzuconych commitów.</p>
+
+    <p>Druga zasada dotyczy tempa. Wszystko, co opisuje ta strona, jest odwracalne i nie ma terminu — poza jednym wyjątkiem u dołu ostatniej tabeli. Nie ma więc powodu, żeby wykonywać kolejne komendy w pośpiechu; przeciwnie, to właśnie pospieszne <code>reset --hard</code> „żeby posprzątać” jest najczęstszą przyczyną jedynej realnej straty.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Metoda · jak diagnozować, gdy objawu nie ma w tabelach</div>
+    <h2>Cztery pytania w stałej kolejności</h2>
+
+    <p>Żadna tabela nie obejmie wszystkiego. Warto więc mieć metodę, która działa też wtedy, gdy komunikat jest nowy — a sprowadza się do zadawania pytań od najtańszego do najdroższego.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>kolejnosc diagnozy</span><span>od najtanszego</span></div>
+      <svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cztery kroki diagnozy w kolejności od najtańszego do najdroższego">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="26" width="590" height="36" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="49" font-size="10" fill="#4fc3c0">1 &#183; gdzie jestem? &#8212; git status -sb &#183; git log --oneline --graph --all -10</text>
+
+          <rect x="14" y="70" width="590" height="36" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="93" font-size="10" fill="#4fc3c0">2 &#183; wzgledem czego? &#8212; git fetch, potem to samo jeszcze raz</text>
+
+          <rect x="14" y="114" width="590" height="36" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="30" y="137" font-size="10" fill="#e8a33d">3 &#183; co dokladnie wnosze? &#8212; git log --oneline origin/master..HEAD</text>
+
+          <rect x="14" y="158" width="590" height="36" rx="8" fill="#1b1e24" stroke="#9c82d8"/>
+          <text x="30" y="181" font-size="10" fill="#9c82d8">4 &#183; co robilem ostatnio? &#8212; git reflog -10</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Cztery komendy, żadna niczego nie zmienia. Można je wykonać w dowolnej sytuacji, także takiej, której się nie rozumie.</div>
+    </div>
+
+    <p>Wspólną cechą wszystkich czterech jest to, że <strong>są bezpieczne</strong>. Żadna nie przestawia refów, nie rusza plików i nie wysyła niczego na serwer. Można je uruchomić odruchowo, zanim zrozumie się sytuację — i zwykle właśnie one tę sytuację wyjaśniają.</p>
+
+    <p>Dopiero mając odpowiedzi, warto sięgać po komendy zmieniające stan. Wtedy też wybór jest zwykle oczywisty, bo wynika z modelu z pierwszej części książki: albo trzeba przesunąć wskaźnik, albo zbudować nowe obiekty, albo pobrać brakujące. Trzeciej możliwości nie ma.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Zanim wykonasz jakąkolwiek komendę naprawczą, zrób dwie rzeczy: zapisz gdzieś bieżący skrót (<code>git rev-parse HEAD</code>) i sprawdź, czy w katalogu roboczym nie ma niezacommitowanych zmian (<code>git status</code>). Pierwsza daje punkt powrotu, druga chroni przed jedyną nieodwracalną stratą.</p>
+    <p>Jeśli nie wiesz, co się właściwie stało, <code>git reflog</code> jest lepszym pierwszym krokiem niż jakakolwiek naprawa. Pokazuje ostatnie kilkanaście operacji z nazwami, więc zwykle odpowiada na pytanie „co ja właściwie zrobiłem” szybciej, niż da się je odtworzyć z pamięci.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>objaw</dt><dd>To, co widzisz na ekranie. Prawie nigdy nie nazywa przyczyny.</dd>
+      <dt>przyczyna</dt><dd>Stan grafu albo konfiguracji, z którego objaw wynika. Zawsze da się ją nazwać jednym zdaniem.</dd>
+      <dt>strata nieodwracalna</dt><dd>Wyłącznie zmiana, która nigdy nie stała się commitem ani wpisem stasha.</dd>
+      <dt>punkt powrotu</dt><dd>Zapisany skrót sprzed operacji. Zamienia każdą naprawę w operację odwracalną.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>To ostatni rozdział. Dalej są dodatki: ściągawka komend opisanych tym, co robią z grafem, konfiguracja warta ustawienia, zwiedzanie katalogu <code>.git</code>, dwa studia przypadku i pełne recepty na dwadzieścia sytuacji, których ta strona dotyka tylko skrótowo.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>

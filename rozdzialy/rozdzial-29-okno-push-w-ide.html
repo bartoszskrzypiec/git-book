@@ -118,6 +118,8 @@
       <li><strong>Pliki, których nie tknąłeś, w podglądzie zmian merge requesta.</strong> Tu porównanie jest już względem właściwej podstawy, więc obce pliki naprawdę oznaczają, że coś dostało się do gałęzi przy okazji.</li>
     </ul>
 
+    <p>Wspólne dla wszystkich trzech jest to, że dotyczą <strong>zawartości</strong>, a nie sposobu liczenia. Artefakt porównania zmienia liczbę; te trzy przypadki zmieniają to, co naprawdę jest w gałęzi — i dlatego warto je odróżniać od fałszywych alarmów z poprzednich sekcji.</p>
+
     <p>We wszystkich trzech przypadkach reakcja jest ta sama i sprowadza się do jednej komendy z Rozdziału 12: obejrzyj zakres. <code>git log --oneline --graph origin/master..HEAD</code> pokazuje jednocześnie liczbę, autorów i kształt — a to wystarcza, żeby rozstrzygnąć, czy to artefakt, czy realny problem.</p>
   </div>
 
