@@ -30,7 +30,150 @@
   <h1>Hooki serwerowe walidują commity, nie stan gałęzi</h1>
   <p class="subtitle">Tu leży najczęstsze nieporozumienie: dopisanie commita z poprawką nie naprawia commita, który reguły złamał. Hook zobaczy oba.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Hook widzi <strong>zakres <code>stara..nowa</code></strong>, czyli wszystkie commity dochodzące do gałęzi — i sprawdza każdy z osobna, a nie stan końcowy.</li>
+      <li>Dlatego dopisanie commita z poprawką <strong>niczego nie naprawia</strong>. Wadliwy commit nadal jest w zakresie i nadal zostanie odrzucony.</li>
+      <li>Jedynym wyjściem jest przepisanie tego commita — amendem albo rebasem — czyli sprawienie, żeby wersja łamiąca regułę przestała być częścią gałęzi.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Co dostaje hook</div>
+    <h2>Trzy wartości i wszystko z nich wynika</h2>
+
+    <p>Hook uruchamiany przy pushu dostaje dla każdej aktualizacji trzy informacje: nazwę refa, jego dotychczasową wartość i proponowaną nową. Wygląda to mniej więcej tak:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>wejście hooka</span><span>kształt, nie konkretna implementacja</span></div>
+<pre>ref  = refs/heads/master
+stara = f0bae61...
+nowa  = 407463b...
+
+<span class="komentarz"># commity dochodzace do galezi to dokladnie:</span>
+git rev-list f0bae61..407463b</pre>
+    </div>
+    <p class="konsola-opis">Zakres z dwiema kropkami — dokładnie ten sam zapis co w Rozdziale 12.</p>
+
+    <p>To jest cała informacja, i jest jej dość. Z nazwy refa wynika, czy zmiana dotyczy gałęzi chronionej. Z pary wartości wynika, czy to przewinięcie do przodu — bo wystarczy sprawdzić, czy stara jest przodkiem nowej. A z zakresu <code>stara..nowa</code> wynika lista commitów, których wcześniej po tej stronie nie było.</p>
+
+    <p>Typowy hook pilnujący formatu wiadomości robi więc dwie rzeczy w tej kolejności: najpierw patrzy, na jaki ref lecą zmiany, a jeśli to gałąź chroniona — <strong>przechodzi po wszystkich commitach z zakresu</strong> i sprawdza każdą wiadomość osobno. Pierwszy commit, który nie spełnia wzorca, kończy sprawę odmową.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konsekwencja · to jest najczęstsze nieporozumienie</div>
+    <h2>Poprawka na wierzchu nic nie daje</h2>
+
+    <p>Wyobraź sobie, że w wiadomości commita zgubił się wymagany prefiks. Push na własną gałąź przeszedł — bo hook zwykle sprawdza tylko gałęzie chronione — a problem ujawnił się dopiero przy scalaniu do gałęzi głównej.</p>
+
+    <p>Naturalny odruch brzmi: dopiszę commit z poprawnym opisem i będzie dobrze. Nie będzie, i to jest sedno tego rozdziału.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>co widzi hook</span><span>zakres, nie szczyt</span></div>
+      <svg viewBox="0 0 620 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hook sprawdza wszystkie commity z zakresu, w tym ten wadliwy, mimo dopisanej poprawki">
+        <g font-family="IBM Plex Mono, monospace">
+          <circle cx="60" cy="80" r="20" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <text x="60" y="84" text-anchor="middle" font-size="9" fill="#8b909b">f0bae61</text>
+          <text x="60" y="116" text-anchor="middle" font-size="9" fill="#8b909b">stara wartosc</text>
+
+          <path d="M 176 80 L 88 80" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 95 75 L 85 80 L 95 85 Z" fill="#2a2f38"/>
+          <circle cx="200" cy="80" r="20" fill="#1b1e24" stroke="#d2685a" stroke-width="2"/>
+          <text x="200" y="84" text-anchor="middle" font-size="9" fill="#d2685a">8031377</text>
+          <text x="200" y="116" text-anchor="middle" font-size="9" fill="#d2685a">brak prefiksu</text>
+
+          <path d="M 316 80 L 228 80" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 235 75 L 225 80 L 235 85 Z" fill="#2a2f38"/>
+          <circle cx="340" cy="80" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="340" y="84" text-anchor="middle" font-size="9" fill="#e8a33d">a91c3f0</text>
+          <text x="340" y="116" text-anchor="middle" font-size="9" fill="#8b909b">&#8222;popraw opis&#8221;</text>
+
+          <rect x="164" y="42" width="212" height="80" rx="10" fill="none" stroke="#9c82d8" stroke-dasharray="5 4"/>
+          <text x="270" y="34" text-anchor="middle" font-size="10" fill="#9c82d8">zakres stara..nowa &#8212; hook sprawdza OBA</text>
+
+          <text x="410" y="76" font-size="10.5" fill="#8b909b">czerwony nadal jest</text>
+          <text x="410" y="94" font-size="10.5" fill="#8b909b">w zakresie &#8594; odmowa</text>
+
+          <text x="14" y="176" font-size="10.5" fill="#8b909b">hook nie pyta &#8222;jak wyglada galaz na koncu&#8221;, tylko &#8222;co do niej dochodzi&#8221;</text>
+          <text x="14" y="196" font-size="10.5" fill="#8b909b">a dochodzi wszystko, czego wczesniej po tamtej stronie nie bylo</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Dopisanie commita powiększa zakres, zamiast go naprawić.</div>
+    </div>
+
+    <p>Wadliwy commit nie przestaje istnieć od tego, że po nim jest lepszy. Nadal jest częścią gałęzi, nadal wjeżdża do gałęzi głównej i nadal ma tę samą wiadomość. Z punktu widzenia reguły nic się nie zmieniło — przybył tylko drugi commit, który regułę spełnia.</p>
+
+    <p>Wniosek jest niewygodny, ale jednoznaczny: <strong>trzeba przepisać ten commit</strong>. Jeśli jest ostatni — <code>git commit --amend</code> z Rozdziału 13. Jeśli leży głębiej — <code>git rebase -i</code> z poleceniem <code>reword</code>, jak w Rozdziale 14. W obu przypadkach kończy się to wymuszonym pushem na własną gałąź, ze wszystkimi zastrzeżeniami z Rozdziału 17.</p>
+
+    <p>To samo rozumowanie stosuje się do każdej innej reguły sprawdzanej per commit: zakazu plików powyżej pewnego rozmiaru, wymogu podpisu, zakazu commitów o pustym opisie. Wszędzie tam pytanie brzmi „czy każdy z dochodzących commitów spełnia regułę”, a nie „czy końcowy stan wygląda dobrze”.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dlaczego akurat tak</div>
+    <h2>Reguła per commit ma sens</h2>
+
+    <p>Można by zapytać, czemu hook nie sprawdza po prostu stanu końcowego — byłoby wygodniej. Powód jest ten sam, dla którego w ogóle prowadzi się historię: <strong>commity są jednostką, którą się potem czyta, cofa i przenosi</strong>.</p>
+
+    <p>Commit bez numeru zgłoszenia w opisie jest bezużyteczny w chwili, gdy ktoś patrzy na niego przez <code>git blame</code> albo szuka, skąd wzięła się dana linia — a to jest jedyny moment, w którym ta wiadomość ma znaczenie. Fakt, że dwa commity dalej ktoś napisał „popraw opis”, nie pomaga w niczym, bo tamten opis dotyczy tamtego commita.</p>
+
+    <p>Warto przy tym zauważyć, że hooki zwykle mają wyjątki i warto je znać, zanim się zacznie walczyć z regułą. Bardzo często zwolnione są commity zaczynające się od <code>Revert</code> — bo ich treść generuje git — oraz commity scalające, które nie mają autora w zwykłym sensie. Jeśli reguła wydaje się niemożliwa do spełnienia, pierwszym krokiem jest sprawdzenie, czy Twój przypadek nie jest właśnie takim wyjątkiem.</p>
+
+    <div class="uwaga">
+      <div class="panel-label">Czego nie robić</div>
+      <p>Nie próbuj obejść reguły, wypychając zmiany innym kanałem albo przez scalenie, które ukryje commity za commitem scalającym. Hook, który sprawdza zakres, zobaczy je tak samo — a jeśli akurat nie zobaczy, to znaczy, że właśnie wprowadziłeś do gałęzi głównej coś, co miało tam nie trafić.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dlaczego problem wychodzi tak późno</div>
+    <h2>Gałąź funkcyjna zwykle nie jest sprawdzana</h2>
+
+    <p>Najbardziej mylącą częścią tej historii jest chronologia. Wadliwy commit trafia na serwer <strong>bez żadnego protestu</strong>, a odmowa przychodzi dopiero przy scalaniu — czasem po kilku dniach, kiedy zdążyłeś o sprawie zapomnieć.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>dwa pushe, dwie odpowiedzi</span><span>ten sam commit</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Push na gałąź funkcyjną przechodzi, scalenie do gałęzi głównej zostaje odrzucone">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="590" height="66" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="54" font-size="10.5" fill="#4fc3c0">push &#8594; refs/heads/ABC-1234</text>
+          <text x="30" y="76" font-size="10" fill="#8b909b">ref nie jest chroniony &#8594; hook konczy dzialanie od razu &#8594; PRZESZLO</text>
+
+          <rect x="14" y="110" width="590" height="66" rx="10" fill="#1b1e24" stroke="#d2685a"/>
+          <text x="30" y="134" font-size="10.5" fill="#d2685a">merge request &#8594; refs/heads/master</text>
+          <text x="30" y="156" font-size="10" fill="#8b909b">ref chroniony &#8594; hook oglada kazdy commit z zakresu &#8594; ODRZUCONE</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ten sam commit, dwie różne odpowiedzi. Różni je wyłącznie ref, na który leci.</div>
+    </div>
+
+    <p>Powód jest zrozumiały: gałęzie funkcyjne są robocze i wymaganie od nich czystości utrudniałoby pracę. Ale skutkiem ubocznym jest to, że informacja zwrotna przychodzi w najgorszym możliwym momencie — kiedy gałąź jest już w recenzji, a przepisywanie jej ma dodatkowy koszt.</p>
+
+    <p>Warto więc znać dwa nawyki, które przesuwają tę informację wcześniej. Pierwszy to lokalny hook <code>commit-msg</code> odtwarzający regułę serwera. Drugi to samodzielne sprawdzenie przed otwarciem merge requesta: <code>git log --oneline origin/master..HEAD</code> pokazuje wszystkie tematy commitów w jednej kolumnie, więc brak prefiksu widać gołym okiem w sekundę.</p>
+
+    <p>Trzecia możliwość istnieje po stronie projektu i warto o nią zapytać, jeśli problem się powtarza: konfiguracja może uruchamiać tę samą kontrolę już przy pushu na gałąź funkcyjną, jako ostrzeżenie zamiast odmowy. To kosztuje kilka linii, a oszczędza dokładnie ten scenariusz.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Jeśli reguła dotyczy formatu wiadomości, najtaniej jest jej nie łamać. Szablon commita (<code>commit.template</code>) wstawia prefiks za Ciebie, a lokalny hook <code>commit-msg</code> odrzuca złą wiadomość od razu — czyli w momencie, w którym poprawka kosztuje jedno <code>--amend</code>, a nie przepisywanie gałęzi tydzień później.</p>
+    <p>Kiedy dostaniesz odmowę, zacznij od policzenia, ile commitów jest wadliwych: <code>git log --oneline origin/master..HEAD</code>. Jeden na końcu to amend. Jeden w środku to <code>rebase -i</code> z <code>reword</code>. Kilka — nadal to samo, tylko więcej linii do zmiany w liście zadań.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>zakres <code>stara..nowa</code></dt><dd>Commity dochodzące do refa przy tej aktualizacji. To jest to, co ogląda hook.</dd>
+      <dt>reguła per commit</dt><dd>Warunek sprawdzany osobno dla każdego commita, nie dla końcowego stanu gałęzi.</dd>
+      <dt>commit-msg</dt><dd>Lokalny hook uruchamiany przy budowaniu commita. Wyprzedza kontrolę serwera, ale nie zastępuje jej.</dd>
+      <dt>commit.template</dt><dd>Plik z domyślną treścią wiadomości, wstawianą przy każdym commicie.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Hook to jedna z dwóch rzeczy, które serwer robi z Twoim pushem. Druga to odmowa przyjęcia go w ogóle — bo gałąź jest chroniona, a jedyną drogą do niej jest merge request. O tym jest następny rozdział.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>

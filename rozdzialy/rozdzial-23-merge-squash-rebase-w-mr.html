@@ -30,7 +30,163 @@
   <h1>Merge, squash czy rebase — co ląduje w masterze</h1>
   <p class="subtitle">Przycisk „Merge” robi trzy różne rzeczy w zależności od ustawienia projektu. Warto wiedzieć którą, bo od tego zależy, ile Twoich commitów zobaczy hook i historia.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Przycisk scalający robi jedną z trzech różnych operacji: <strong>merge commit</strong>, <strong>squash</strong> albo <strong>rebase</strong>. Wybór został podjęty w ustawieniach projektu, nie przez Ciebie.</li>
+      <li>Squash zamienia całą gałąź w <strong>jeden nowy commit</strong>. Twoje commity nie trafiają do gałęzi głównej wcale — ani ich skróty, ani ich wiadomości.</li>
+      <li>Stąd wniosek praktyczny: przy squashu tytuł merge requesta jest ważniejszy niż wiadomości commitów, bo to on staje się opisem tego, co wejdzie do historii.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Trzy warianty · ta sama gałąź, trzy wyniki</div>
+    <h2>Co ląduje w gałęzi głównej</h2>
+
+    <p>Weź gałąź z trzema commitami. W zależności od ustawienia projektu, po naciśnięciu „Merge” w gałęzi głównej pojawi się coś zupełnie innego.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy metody scalania</span><span>ta sama galaz na wejsciu</span></div>
+      <svg viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Merge commit, squash i rebase jako trzy różne wyniki scalenia tej samej gałęzi">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="22" font-size="10" fill="#4fc3c0" letter-spacing="1">MERGE COMMIT</text>
+          <circle cx="44" cy="58" r="14" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="108" cy="34" r="14" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="164" cy="34" r="14" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="220" cy="34" r="14" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="164" cy="82" r="14" fill="#1b1e24" stroke="#6e93be" stroke-width="2"/>
+          <circle cx="276" cy="58" r="14" fill="#1b1e24" stroke="#4fc3c0" stroke-width="2"/>
+          <path d="M 94 40 L 58 52" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 150 34 L 122 34" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 206 34 L 178 34" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 150 82 L 58 64" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 262 52 L 234 40" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 262 64 L 178 82" stroke="#2a2f38" stroke-width="1.5"/>
+          <text x="320" y="52" font-size="10" fill="#8b909b">trzy Twoje commity wchodza,</text>
+          <text x="320" y="68" font-size="10" fill="#8b909b">dochodzi commit scalajacy</text>
+
+          <text x="14" y="122" font-size="10" fill="#9c82d8" letter-spacing="1">SQUASH</text>
+          <circle cx="44" cy="152" r="14" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="108" cy="152" r="14" fill="#1b1e24" stroke="#9c82d8" stroke-width="2"/>
+          <path d="M 94 152 L 58 152" stroke="#2a2f38" stroke-width="1.5"/>
+          <text x="320" y="148" font-size="10" fill="#8b909b">jeden nowy commit z calej galezi,</text>
+          <text x="320" y="164" font-size="10" fill="#8b909b">Twoje skroty nie wchodza wcale</text>
+
+          <text x="14" y="206" font-size="10" fill="#9c82d8" letter-spacing="1">REBASE</text>
+          <circle cx="44" cy="236" r="14" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="108" cy="236" r="14" fill="#1b1e24" stroke="#9c82d8" stroke-width="2"/>
+          <circle cx="164" cy="236" r="14" fill="#1b1e24" stroke="#9c82d8" stroke-width="2"/>
+          <circle cx="220" cy="236" r="14" fill="#1b1e24" stroke="#9c82d8" stroke-width="2"/>
+          <path d="M 94 236 L 58 236" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 150 236 L 122 236" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 206 236 L 178 236" stroke="#2a2f38" stroke-width="1.5"/>
+          <text x="320" y="232" font-size="10" fill="#8b909b">trzy commity, ale to KOPIE &#8212;</text>
+          <text x="320" y="248" font-size="10" fill="#8b909b">o innych skrotach niz u Ciebie</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Fioletem zaznaczone commity, które powstały przy scalaniu. Tylko w pierwszym wariancie Twoje commity wchodzą takie, jakie są.</div>
+    </div>
+
+    <p>Zwróć uwagę na drugi i trzeci wiersz: w obu przypadkach <strong>gałąź główna dostaje obiekty, których u Ciebie nie ma</strong>. Twoja gałąź lokalna po scaleniu jest więc rodzeństwem tego, co weszło — i dlatego po scaleniu przez squash albo rebase najprościej jest tę gałąź po prostu usunąć, a nie próbować jej doprowadzić do zgodności.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Squash · najwięcej konsekwencji</div>
+    <h2>Twoje commity nie wchodzą do historii</h2>
+
+    <p>Squash jest najpopularniejszym ustawieniem w zespołach, które chcą czytelnej gałęzi głównej: jeden merge request to jeden commit, niezależnie od tego, ile ich powstało po drodze. Cena jest prosta i warto ją znać z góry.</p>
+
+    <p>Po pierwsze, <strong>wiadomości Twoich commitów przestają mieć znaczenie dla historii</strong>. Nowy commit dostaje opis wzięty zwykle z tytułu merge requesta, a wszystkie Twoje tematy lądują co najwyżej w jego treści. Reguła z Rozdziału 21 dotyczy wtedy właśnie tego jednego, wygenerowanego opisu — i bywa, że hook sprawdza go po scaleniu, a nie Twoje commity.</p>
+
+    <p>Po drugie, <strong>ginie podział na kroki</strong>. Jeśli gałąź zawierała refaktoryzację i zmianę zachowania jako dwa osobne commity, po squashu są jednym. Przy szukaniu przyczyny regresji za pół roku ta różnica bywa odczuwalna.</p>
+
+    <p>Squash ma za to jedną zaletę, która przeważa w wielu zespołach: <strong>zdejmuje presję z porządkowania historii przed scaleniem</strong>. Skoro i tak wszystko zostanie zwinięte w jeden commit, nikogo nie obchodzi, że po drodze były trzy commity „poprawka po recenzji”. Dla osoby, która nie chce spędzać czasu na interaktywnym rebasie, to realna oszczędność.</p>
+
+    <p>Po trzecie i najbardziej praktyczne: <strong>gałąź lokalna staje się bezużyteczna</strong> w chwili scalenia. Nie da się jej „doprowadzić do zgodności”, bo commity są inne. Właściwą reakcją jest usunięcie jej i odbicie następnej od świeżej gałęzi głównej — dokładnie tak, jak opisuje Rozdział 8.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Który wariant · i skąd to wiedzieć</div>
+    <h2>Rozpoznać ustawienie projektu</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Metoda</th><th>Historia głównej</th><th>Co robić po scaleniu</th></tr></thead>
+        <tbody>
+          <tr><td>merge commit</td><td>rozgałęziona, widać każdy MR</td><td>gałąź lokalną można scalić normalnie</td></tr>
+          <tr><td>squash</td><td>liniowa, jeden commit na MR</td><td>usunąć gałąź, odbić nową od głównej</td></tr>
+          <tr><td>rebase / fast-forward</td><td>liniowa, wszystkie commity</td><td>usunąć gałąź, odbić nową od głównej</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Dwie ostatnie metody wymagają, żeby gałąź była aktualna względem głównej — stąd prośby o rebase przed scaleniem.</p>
+
+    <p>Najprostszy sposób, żeby rozpoznać ustawienie bez zaglądania w konfigurację, to spojrzeć na historię gałęzi głównej: <code>git log --oneline --graph -20</code>. Rozwidlenia oznaczają merge commity. Ich brak plus commity zatytułowane jak merge requesty oznaczają squash. Ich brak plus commity wyglądające jak zwykłe, robocze — rebase.</p>
+
+    <p>Warto też wiedzieć, skąd bierze się częsta prośba „zrób rebase i wypchnij ponownie”. Przy metodzie rebase i fast-forward serwer nie potrafi scalić gałęzi, która rozeszła się z główną — musi móc ustawić ref przewinięciem do przodu. Dlatego to Ty musisz najpierw doprowadzić gałąź do stanu, w którym jej podstawą jest aktualna gałąź główna.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Po scaleniu · dlaczego gałąź wygląda dziwnie</div>
+    <h2>Twoja kopia zostaje w tyle, i to jest normalne</h2>
+
+    <p>Najczęstsze zdziwienie po scaleniu brzmi: „przecież to zostało scalone, dlaczego git twierdzi, że mam commity, których nie ma w gałęzi głównej”. Odpowiedź wynika wprost z rysunku z pierwszej sekcji.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>po squashu</span><span>ta sama zmiana, dwa obiekty</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Po squashu gałąź lokalna i główna zawierają tę samą zmianę jako różne commity">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="26" font-size="10" fill="#4fc3c0" letter-spacing="1">TWOJA GALAZ</text>
+          <circle cx="52" cy="62" r="16" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="122" cy="62" r="16" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="192" cy="62" r="16" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <path d="M 106 62 L 68 62" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 176 62 L 138 62" stroke="#2a2f38" stroke-width="1.5"/>
+
+          <text x="14" y="122" font-size="10" fill="#6e93be" letter-spacing="1">GALAZ GLOWNA</text>
+          <circle cx="52" cy="156" r="16" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="122" cy="156" r="16" fill="#1b1e24" stroke="#9c82d8" stroke-width="2"/>
+          <path d="M 106 156 L 68 156" stroke="#2a2f38" stroke-width="1.5"/>
+
+          <text x="240" y="60" font-size="10.5" fill="#8b909b">dwa Twoje commity</text>
+          <text x="240" y="78" font-size="10.5" fill="#8b909b">o skrotach A i B</text>
+          <text x="240" y="154" font-size="10.5" fill="#8b909b">jeden commit o skrocie C,</text>
+          <text x="240" y="172" font-size="10.5" fill="#8b909b">zawierajacy te sama zmiane</text>
+
+          <text x="440" y="108" font-size="10.5" fill="#9c82d8">git widzi trzy rozne obiekty</text>
+          <text x="440" y="126" font-size="10.5" fill="#9c82d8">&#8212; nie ma jak ich powiazac</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Treść jest ta sama, adresy różne. Git porównuje adresy, więc uznaje, że masz dwa commity ponad gałąź główną.</div>
+    </div>
+
+    <p>Git nie ma żadnego sposobu, żeby stwierdzić, że commit C „jest” Twoimi commitami A i B — nie zapisuje takiej informacji nigdzie. Dlatego <code>git status</code> będzie uparcie twierdził, że jesteś do przodu, a próba scalenia gałęzi po raz drugi wprowadzi tę samą zmianę jeszcze raz.</p>
+
+    <p>Właściwą reakcją jest usunięcie gałęzi lokalnej, a nie doprowadzanie jej do zgodności. Git nawet pomaga to zrobić bezpiecznie: <code>git branch -d</code> odmówi, jeśli gałąź nie została scalona <em>w sensie grafu</em> — a po squashu odmówi zawsze, więc do sprzątania po tej metodzie potrzebne jest <code>-D</code>. To niestety zdejmuje zabezpieczenie, więc warto najpierw upewnić się, że zmiana faktycznie jest w gałęzi głównej.</p>
+
+    <p>Warto o tym pamiętać także przy pracy zespołowej: jeśli ktoś odbił gałąź od Twojej, po squashu jego praca stoi na commitach, których w gałęzi głównej nigdy nie było. Sprzątanie tego jest wykonalne, ale kosztuje — dlatego łańcuchy zależnych gałęzi i squash to kombinacja, której lepiej unikać.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Przy squashu pisz tytuł merge requesta tak, jakbyś pisał wiadomość commita — bo nią zostanie. To jedno zdanie zobaczy każdy, kto za rok będzie przeglądał historię gałęzi głównej, i będzie to jedyne, co po tej pracy zostanie w opisie.</p>
+    <p>Po scaleniu warto od razu posprzątać: <code>git switch master</code>, <code>git pull</code>, <code>git branch -d ABC-1234</code>, <code>git fetch --prune</code>. Cztery komendy, które zapobiegają sytuacji, w której po miesiącu masz dwadzieścia lokalnych gałęzi i żadnej pewności, które z nich są już scalone.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>squash</dt><dd>Zbudowanie z całej gałęzi jednego commita. Twoje commity nie wchodzą do gałęzi docelowej.</dd>
+      <dt>fast-forward only</dt><dd>Ustawienie, przy którym scalenie jest możliwe tylko wtedy, gdy gałąź jest potomkiem docelowej.</dd>
+      <dt>semi-linear</dt><dd>Wariant pośredni: rebase gałęzi, a potem commit scalający. Historia liniowa, ale widać granice MR-ów.</dd>
+      <dt>delete source branch</dt><dd>Opcja usuwająca gałąź po scaleniu. Zwykle warto ją zostawić włączoną.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Ostatni rozdział tej części dotyczy rzeczy, która nie ma nic wspólnego z historią ani z regułami projektu, a potrafi zablokować pracę równie skutecznie: tego, jak Twoja stacja w ogóle łączy się z serwerem i skąd bierze hasło.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

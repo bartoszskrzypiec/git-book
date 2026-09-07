@@ -30,7 +30,159 @@
   <h1>Co się dzieje przy push</h1>
   <p class="subtitle">Push to nie „wysyłka plików”. To prośba o zmianę wartości jednego refa na serwerze — i seria hooków, które mogą tę prośbę odrzucić.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Push nie jest wysyłką plików. To <strong>prośba o zmianę wartości refa</strong> po drugiej stronie, poprzedzona przesłaniem brakujących obiektów.</li>
+      <li>Serwer uruchamia przy tym hooki. <code>pre-receive</code> widzi wszystkie aktualizacje naraz, <code>update</code> — każdą osobno, <code>post-receive</code> działa już po fakcie i niczego nie zablokuje.</li>
+      <li>Odmowa hooka nie jest awarią sieci ani błędem gita. To decyzja programu po drugiej stronie, a jego komunikat jest jedyną informacją, jaką dostajesz.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Przebieg · cztery kroki, zawsze te same</div>
+    <h2>Co się dzieje między naciśnięciem a odpowiedzią</h2>
+
+    <p>Z Twojej strony push to jedna komenda, a z technicznej — krótka rozmowa. Warto ją znać, bo każdy z czterech kroków może się nie udać z zupełnie innego powodu, a komunikaty potrafią wyglądać podobnie.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>przebieg pusha</span><span>cztery kroki</span></div>
+      <svg viewBox="0 0 620 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cztery kroki pusha: negocjacja, przesłanie obiektów, hooki, aktualizacja refa">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="24" font-size="10" fill="#4fc3c0" letter-spacing="1">TY</text>
+          <text x="560" y="24" font-size="10" fill="#6e93be" letter-spacing="1">SERWER</text>
+          <line x1="40" y1="34" x2="40" y2="200" stroke="#2a2f38"/>
+          <line x1="580" y1="34" x2="580" y2="200" stroke="#2a2f38"/>
+
+          <path d="M 44 54 L 574 54" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 567 49 L 577 54 L 567 59 Z" fill="#2a2f38"/>
+          <text x="56" y="48" font-size="10" fill="#ecebe4">1 &#183; jakie masz refy?</text>
+
+          <path d="M 574 84 L 46 84" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 53 79 L 43 84 L 53 89 Z" fill="#2a2f38"/>
+          <text x="56" y="78" font-size="10" fill="#8b909b">lista refow i ich wartosci</text>
+
+          <path d="M 44 116 L 574 116" stroke="#e8a33d" stroke-width="1.5"/>
+          <path d="M 567 111 L 577 116 L 567 121 Z" fill="#e8a33d"/>
+          <text x="56" y="110" font-size="10" fill="#e8a33d">2 &#183; brakujace obiekty + prosba o zmiane refa</text>
+
+          <rect x="360" y="132" width="216" height="34" rx="6" fill="#1b1e24" stroke="#9c82d8"/>
+          <text x="468" y="153" text-anchor="middle" font-size="10" fill="#9c82d8">3 &#183; hooki decyduja</text>
+
+          <path d="M 574 188 L 46 188" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 53 183 L 43 188 L 53 193 Z" fill="#2a2f38"/>
+          <text x="56" y="182" font-size="10" fill="#8b909b">4 &#183; przyjete albo odrzucone, ref po ref</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Obiekty jadą przed decyzją. Odrzucony push zostawia je na serwerze — po prostu nic ich nie wskazuje.</div>
+    </div>
+
+    <p>Ostatnie zdanie podpisu bywa zaskoczeniem, a wyjaśnia jedną z dziwniejszych obserwacji: po odrzuconym pushu commity <em>są</em> po drugiej stronie, tylko żaden ref na nie nie wskazuje. Zachowują się dokładnie jak commity porzucone u Ciebie po amendzie — istnieją, ale są niewidoczne, i po jakimś czasie sprzątanie je usunie.</p>
+
+    <p>Jednostką decyzji jest <strong>aktualizacja jednego refa</strong>, nie cały push. Wypychając dwie gałęzie naraz, możesz dostać zgodę na jedną i odmowę na drugą — chyba że użyjesz <code>--atomic</code>, które każe serwerowi potraktować całość jako jedną transakcję.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Refspec · co dokładnie ma się zmienić</div>
+    <h2>Prośba ma trzy części</h2>
+
+    <p>Rozwinięta postać <code>git push</code> wygląda tak: <code>git push origin ABC-1234:ABC-1234</code>. Nazwa zdalnego repozytorium, źródło i cel, rozdzielone dwukropkiem. Ten zapis nazywa się refspec i pojawia się w każdym komunikacie pusha jako para ze strzałką.</p>
+
+    <p>Rozdzielenie stron ma praktyczne zastosowania. <code>git push origin HEAD:refs/heads/inna</code> wysyła bieżący stan pod inną nazwą. <code>git push origin :ABC-1234</code> — z pustym źródłem — oznacza „ustaw tam nic”, czyli <strong>usuwa gałąź zdalną</strong>; nowsze wersje gita mają na to czytelniejsze <code>--delete</code>.</p>
+
+    <p>Ta sama składnia obowiązuje przy pobieraniu, tylko w drugą stronę — i to ona, zapisana w konfiguracji jako <code>+refs/heads/*:refs/remotes/origin/*</code>, tworzy całą przestrzeń nazw <code>origin/*</code> z Rozdziału 8. Plus na początku oznacza zgodę na aktualizację, która nie jest przewinięciem do przodu; przy refach zdalnych jest to bezpieczne, bo nie ma tam Twojej pracy.</p>
+
+    <p>Warto zauważyć, że nie ma tu żadnej wzmianki o plikach ani o katalogu roboczym. Serwer trzymający repozytorium nie ma katalogu roboczego wcale — to <span class="term-serwer">repozytorium gołe</span>, czyli sama zawartość <code>.git</code>. Dlatego nie da się do niego wejść i „zobaczyć plików”, a próba pchnięcia zmian do repozytorium z katalogiem roboczym domyślnie kończy się odmową.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Hooki · gdzie zapada decyzja</div>
+    <h2>Trzy momenty, dwa z nich mogą odmówić</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Hook</th><th>Widzi</th><th>Może odmówić</th></tr></thead>
+        <tbody>
+          <tr><td><code>pre-receive</code></td><td>wszystkie aktualizacje refów naraz</td><td>tak — całego pusha</td></tr>
+          <tr><td><code>update</code></td><td>jedną aktualizację refa</td><td>tak — tej jednej</td></tr>
+          <tr><td><code>post-receive</code></td><td>to, co zostało przyjęte</td><td>nie, jest już po wszystkim</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Kolejność jest stała. Trzeci uruchamia zwykle powiadomienia i budowanie.</p>
+
+    <p>Każdy hook dostaje trzy informacje o aktualizacji: <strong>nazwę refa, starą wartość i nową</strong>. To wystarcza, żeby sprawdzić dosłownie wszystko: na jaką gałąź lecą zmiany, jakie commity dochodzą (bo zakres <code>stara..nowa</code> to dokładnie one) i czy aktualizacja jest przewinięciem do przodu, czy nie.</p>
+
+    <p>Odmowa wygląda z Twojej strony charakterystycznie — komunikaty hooka są poprzedzone słowem <code>remote:</code>, bo pochodzą z drugiej maszyny:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>push odrzucony przez hook</span><span>kształt komunikatu</span></div>
+<pre><span class="cmd">git push</span>
+<span class="err">remote: BLAD: wiadomosc commita musi zaczynac sie od [ABC-1234]</span>
+<span class="err">remote: odrzucony commit: 8031377</span>
+<span class="err">To gitlab.przyklad/projekt.git</span>
+<span class="err"> ! [remote rejected]   master -&gt; master (pre-receive hook declined)</span></pre>
+    </div>
+    <p class="konsola-opis">Zwróć uwagę na <code>[remote rejected]</code> zamiast <code>[rejected]</code> — to jest różnica między decyzją serwera a warunkiem fast-forward.</p>
+
+    <p>To rozróżnienie warto mieć w głowie, bo prowadzi w dwie zupełnie różne strony. <code>[rejected] ... (non-fast-forward)</code> to Rozdział 16: rozjazd, który rozwiązujesz u siebie. <code>[remote rejected] ... (hook declined)</code> oznacza, że commity dojechały, ale <strong>reguła projektu ich nie przyjęła</strong> — i tu żadne pobieranie ani scalanie nie pomoże, dopóki nie spełnisz tej reguły.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dwie rodziny hooków · i tylko jedna coś gwarantuje</div>
+    <h2>Lokalne kontra serwerowe</h2>
+
+    <p>Git ma kilkanaście punktów zaczepienia i dzielą się one na dwie grupy, których nie należy mylić — bo dają zupełnie różne gwarancje.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>gdzie stoi kontrola</span><span>i czy da sie ja ominac</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Hooki lokalne w katalogu .git i hooki serwerowe, tylko te drugie są obowiązkowe">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="34" width="270" height="120" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="58" font-size="11" fill="#4fc3c0">u Ciebie &#183; .git/hooks</text>
+          <text x="30" y="82" font-size="10" fill="#8b909b">pre-commit, commit-msg, pre-push</text>
+          <text x="30" y="104" font-size="10" fill="#8b909b">nie jada przy klonowaniu</text>
+          <text x="30" y="126" font-size="10" fill="#d2685a">omija je --no-verify</text>
+
+          <rect x="336" y="34" width="270" height="120" rx="10" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="352" y="58" font-size="11" fill="#6e93be">na serwerze</text>
+          <text x="352" y="82" font-size="10" fill="#8b909b">pre-receive, update, post-receive</text>
+          <text x="352" y="104" font-size="10" fill="#8b909b">jeden egzemplarz dla wszystkich</text>
+          <text x="352" y="126" font-size="10" fill="#4fc3c0">nie da sie ominac</text>
+
+          <text x="14" y="180" font-size="10.5" fill="#8b909b">lewe sa wygoda: mowia o problemie wczesniej &#183; prawe sa regula</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ta sama kontrola po obu stronach to dobry układ: lokalna oszczędza czas, serwerowa daje pewność.</div>
+    </div>
+
+    <p>Hooki lokalne leżą w <code>.git/hooks</code>, czyli poza drzewem plików projektu — <strong>nie są wersjonowane i nie przyjeżdżają przy klonowaniu</strong>. Nowy członek zespołu nie ma ich, dopóki sam ich nie zainstaluje, a każdy może je wyłączyć jednym przełącznikiem. Dlatego traktuje się je jako udogodnienie, a nie zabezpieczenie.</p>
+
+    <p>Da się to obejść na dwa sposoby, oba popularne: trzymać hooki w katalogu wersjonowanym i wskazać go przez <code>core.hooksPath</code>, albo użyć jednego z narzędzi, które robią to za Ciebie. Ale nawet wtedy pozostaje <code>--no-verify</code>, więc reguła, na której komuś zależy, i tak musi mieć swój egzemplarz po stronie serwera.</p>
+
+    <p>Wniosek praktyczny jest odwrotny do intuicji: jeśli irytuje Cię kontrola serwera, najlepszą reakcją jest <strong>postawienie tej samej kontroli u siebie</strong>. Odmowa przy commicie kosztuje jeden amend; odmowa przy scalaniu tydzień później kosztuje przepisanie gałęzi.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Hooki serwerowe są jedynymi, których nie da się pominąć. Te lokalne — <code>pre-commit</code> i spółka — leżą w Twoim <code>.git/hooks</code>, nie jadą przy klonowaniu i wyłącza je jeden przełącznik <code>--no-verify</code>. Dlatego reguły, na których komuś naprawdę zależy, żyją po stronie serwera, a lokalne hooki są wyłącznie udogodnieniem: pozwalają dowiedzieć się o problemie wcześniej.</p>
+    <p>Jeśli komunikat odmowy jest niejasny, przeczytaj go w całości łącznie z liniami <code>remote:</code>. To jedyne miejsce, w którym autor hooka mógł Ci cokolwiek wytłumaczyć — git nie doda tam nic od siebie.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>refspec</dt><dd>Zapis <code>zrodlo:cel</code> mówiący, który ref ma zostać ustawiony i czym.</dd>
+      <dt>repozytorium gołe (bare)</dt><dd>Repozytorium bez katalogu roboczego — sama zawartość <code>.git</code>. Taka postać leży na serwerze.</dd>
+      <dt>remote rejected</dt><dd>Odmowa pochodząca od hooka, nie od warunku fast-forward.</dd>
+      <dt>--atomic</dt><dd>Push wszystkich refów jako jedna transakcja: albo wszystkie, albo żaden.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Wiesz już, gdzie serwer podejmuje decyzję. Następny rozdział wyjaśnia, <em>co dokładnie</em> ogląda przy tym typowy hook — i dlaczego dopisanie commita z poprawką go nie przekona.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

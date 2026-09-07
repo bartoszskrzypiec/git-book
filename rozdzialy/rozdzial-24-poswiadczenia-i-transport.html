@@ -30,7 +30,153 @@
   <h1>Poświadczenia i transport: SSH, HTTPS, credential helper</h1>
   <p class="subtitle">Spora część „błędów gita” to w rzeczywistości brakujący program w PATH albo klucz, którego agent nie widzi. Warto umieć je odróżnić w dziesięć sekund.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Git sam nie przechowuje haseł. Robi to <strong>osobny program</strong> — credential helper — wskazany w konfiguracji. Jeśli go nie ma w <code>PATH</code>, git prosi o hasło albo odmawia.</li>
+      <li>Dwa transporty: SSH używa pary kluczy i agenta, HTTPS — nazwy użytkownika i tokenu. To dwa niezależne światy, a ten sam serwer zwykle udostępnia oba.</li>
+      <li>Sporo „błędów gita” to w rzeczywistości <strong>problemy stacji</strong>: brakujący program, klucz niewidoczny dla agenta, zepsuty wpis w konfiguracji. Warto umieć je odróżnić w kilkanaście sekund.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Kto trzyma hasło</div>
+    <h2>Git deleguje to na zewnątrz</h2>
+
+    <p>Kiedy git potrzebuje poświadczeń, nie sięga do żadnej własnej bazy. Uruchamia program o nazwie <code>git-credential-&lt;coś&gt;</code>, gdzie „coś” pochodzi z konfiguracji, i pyta go o dane. Program ten może je trzymać w magazynie systemowym, w pliku albo w pamięci przez kilka minut.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>brakujący helper</span><span>komunikat, który wygląda na błąd gita</span></div>
+<pre><span class="cmd">git push</span>
+<span class="err">git: 'credential-manager' is not a git command.</span>
+<span class="err">fatal: could not read Username for 'https://gitlab.przyklad': No such device or address</span></pre>
+    </div>
+    <p class="konsola-opis">Pierwsza linia mówi wszystko: git szukał programu i go nie znalazł. Druga to tylko konsekwencja.</p>
+
+    <p>Ten komunikat wprowadza w błąd, bo brzmi jak problem z serwerem albo z uprawnieniami. W rzeczywistości nie doszło nawet do próby połączenia: <strong>zabrakło programu na tej konkretnej maszynie</strong>. Ten sam projekt, ten sam użytkownik i to samo repozytorium będą działać na innej stacji bez żadnej zmiany.</p>
+
+    <p>Diagnoza zajmuje dwie komendy. Najpierw sprawdzasz, jaki helper jest ustawiony i skąd pochodzi ustawienie, a potem, czy taki program w ogóle istnieje:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>diagnostyka</span><span>dwie komendy</span></div>
+<pre><span class="cmd">git config --show-origin credential.helper</span>
+file:C:/Program Files/Git/etc/gitconfig   manager
+
+<span class="cmd">git credential-manager --version</span>
+<span class="komentarz"># jesli tu jest blad, to jest cala przyczyna</span></pre>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dwa transporty · i dwa zestawy problemów</div>
+    <h2>SSH kontra HTTPS</h2>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>dwie drogi do tego samego repozytorium</span><span>rozne mechanizmy</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Porównanie transportu SSH i HTTPS: klucze i agent kontra token i credential helper">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="286" height="140" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="54" font-size="11" fill="#4fc3c0">SSH</text>
+          <text x="30" y="76" font-size="9.5" fill="#8b909b">git@serwer:projekt.git</text>
+          <text x="30" y="100" font-size="10" fill="#ecebe4">para kluczy + agent</text>
+          <text x="30" y="120" font-size="9.5" fill="#8b909b">klucz publiczny wgrany na serwer</text>
+          <text x="30" y="140" font-size="9.5" fill="#8b909b">test: ssh -T git@serwer</text>
+          <text x="30" y="160" font-size="9.5" fill="#d2685a">psuje sie: agent nie widzi klucza</text>
+
+          <rect x="320" y="30" width="286" height="140" rx="10" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="336" y="54" font-size="11" fill="#6e93be">HTTPS</text>
+          <text x="336" y="76" font-size="9.5" fill="#8b909b">https://serwer/projekt.git</text>
+          <text x="336" y="100" font-size="10" fill="#ecebe4">login + token</text>
+          <text x="336" y="120" font-size="9.5" fill="#8b909b">token wygenerowany w interfejsie</text>
+          <text x="336" y="140" font-size="9.5" fill="#8b909b">test: git ls-remote</text>
+          <text x="336" y="160" font-size="9.5" fill="#d2685a">psuje sie: brak helpera, wygasly token</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Adres w <code>remote.origin.url</code> decyduje, którym z dwóch światów posługuje się to repozytorium.</div>
+    </div>
+
+    <p>Wybór transportu jest zapisany w adresie i można go zmienić w każdej chwili: <code>git remote set-url origin ...</code>. To jest pierwsza rzecz warta sprawdzenia, gdy jedno repozytorium działa, a drugie nie — bardzo często różnią się właśnie tym.</p>
+
+    <p>SSH ma jedną cechę, która myli najczęściej: klucz może istnieć na dysku, a mimo to nie być używany, bo <strong>agent go nie załadował</strong>. Objawem jest prośba o hasło do klucza przy każdej operacji albo odmowa dostępu mimo poprawnie wgranego klucza publicznego. Komenda <code>ssh-add -l</code> wypisuje, co agent aktualnie widzi, i zwykle rozstrzyga sprawę w sekundę.</p>
+
+    <p>HTTPS psuje się inaczej: tokeny wygasają. Komunikat o odmowie dostępu przy niezmienionej konfiguracji, na repozytorium, które działało wczoraj, prawie zawsze oznacza wygasły token — a nie zmianę uprawnień.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Odróżnianie · kod czy stacja</div>
+    <h2>Trzy pytania, które oszczędzają godzinę</h2>
+
+    <p>Warto mieć gotowy odruch na sytuację, w której coś nie działa, a nie wiadomo, po czyjej stronie leży problem. Trzy pytania wystarczają, żeby to rozstrzygnąć.</p>
+
+    <ul class="compact">
+      <li><strong>Czy ten sam problem występuje na innym repozytorium?</strong> Jeśli tak — to konfiguracja stacji, nie projekt.</li>
+      <li><strong>Czy komunikat wspomina o czymś spoza gita?</strong> Nazwa programu, ścieżka, <code>PATH</code>, agent, token, certyfikat — to wszystko są rzeczy środowiska.</li>
+      <li><strong>Czy poprzedziło to jakiekolwiek połączenie?</strong> Odmowa, która przyszła natychmiast, zwykle nie zdążyła dotknąć serwera.</li>
+    </ul>
+
+    <p>Czwarte pytanie, wykraczające poza samego gita, brzmi: <em>czy coś się na tej stacji ostatnio zmieniło</em>. Aktualizacja systemu, nowa wersja narzędzia, zmiana zasad w firmie — wszystko to potrafi usunąć albo podmienić program, na którym git polega, bez żadnego związku z Twoim projektem.</p>
+
+    <p>Ten sam schemat myślenia wraca w piątej części tej książki, w znacznie bardziej podstępnej postaci — tam problemem nie będą poświadczenia, tylko wersje modułów, a błąd będzie wyglądał jak zwykły błąd w kodzie.</p>
+
+    <p>Warto też pamiętać, że konfiguracja gita ma trzy poziomy: systemowy, użytkownika i repozytorium, przy czym bardziej szczegółowy wygrywa. <code>git config --list --show-origin</code> pokazuje wszystkie naraz razem z plikami, z których pochodzą — i to jest jedyna komenda, która odpowiada na pytanie „skąd to ustawienie się wzięło”.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konfiguracja · trzy poziomy, jeden wynik</div>
+    <h2>Skąd bierze się dane ustawienie</h2>
+
+    <p>Wiele niewytłumaczalnych zachowań gita to po prostu ustawienie, o którym się nie wie. Konfiguracja składa się z trzech warstw i wygrywa najbardziej szczegółowa — repozytorium bije użytkownika, użytkownik bije system.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy poziomy konfiguracji</span><span>wygrywa najwezszy</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy zagnieżdżone poziomy konfiguracji gita: systemowy, użytkownika i repozytorium">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="26" width="330" height="142" rx="10" fill="none" stroke="#6e93be" stroke-dasharray="4 4"/>
+          <text x="28" y="46" font-size="10" fill="#6e93be">--system &#183; cala instalacja gita</text>
+
+          <rect x="34" y="58" width="290" height="96" rx="10" fill="none" stroke="#4fc3c0" stroke-dasharray="4 4"/>
+          <text x="48" y="78" font-size="10" fill="#4fc3c0">--global &#183; Twoje konto, wszystkie repozytoria</text>
+
+          <rect x="54" y="90" width="250" height="48" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="68" y="110" font-size="10" fill="#e8a33d">--local &#183; to jedno repozytorium</text>
+          <text x="68" y="128" font-size="9.5" fill="#8b909b">.git/config</text>
+
+          <text x="366" y="70" font-size="10.5" fill="#8b909b">im wezszy zakres,</text>
+          <text x="366" y="88" font-size="10.5" fill="#8b909b">tym wyzszy priorytet</text>
+          <text x="366" y="122" font-size="10.5" fill="#8b909b">--show-origin mowi,</text>
+          <text x="366" y="140" font-size="10.5" fill="#8b909b">z ktorego pliku pochodzi</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Trzy pliki, jedna wynikowa wartość. Bez <code>--show-origin</code> nie da się zgadnąć, który zadecydował.</div>
+    </div>
+
+    <p>Najczęstszym praktycznym przypadkiem jest adres użytkownika: globalnie masz swój prywatny, a w repozytorium służbowym potrzebujesz służbowego. Wystarczy wtedy <code>git config user.email ...</code> bez <code>--global</code>, wykonane w tym repozytorium — i tylko ono będzie miało inną wartość.</p>
+
+    <p>Drugim częstym przypadkiem jest ustawienie odziedziczone po kimś: skopiowana konfiguracja, instrukcja z sieci sprzed lat, wpis dodany przez narzędzie. Objawem bywa git zachowujący się inaczej niż u kolegi mimo tej samej wersji. <code>git config --list --show-origin</code> rozstrzyga to w jednej komendzie, bo pokazuje nie tylko wartości, ale i pliki, z których pochodzą.</p>
+
+    <p>Warto też wiedzieć, że część ustawień dotyczy konkretnych adresów. Zapis <code>[url "..."] insteadOf</code> potrafi po cichu podmieniać adres repozytorium przy każdej operacji — bardzo przydatne w firmowych konfiguracjach i bardzo mylące, kiedy się o nim nie wie.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Jeśli operacja z terminala nie działa, a ta sama z IDE tak (albo odwrotnie), to prawie na pewno różnica w środowisku, a nie w gicie. IDE bywa uruchamiane z innym <code>PATH</code>, innym agentem SSH, czasem nawet z inną instalacją gita. Sprawdź <code>git --version</code> i <code>git config --show-origin credential.helper</code> w obu miejscach — jeśli wyniki się różnią, masz odpowiedź.</p>
+    <p>Przy pierwszej konfiguracji nowej stacji warto od razu ustawić <code>user.name</code> i <code>user.email</code>. Git pozwoli commitować bez nich, wpisując zgadniętą wartość, a taki commit potrafi potem nie przejść przez kontrolę serwera albo nie zostać przypisany do Twojego konta.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>credential helper</dt><dd>Zewnętrzny program przechowujący poświadczenia. Git tylko go woła.</dd>
+      <dt>agent SSH</dt><dd>Program trzymający odblokowane klucze w pamięci, żeby nie podawać hasła przy każdej operacji.</dd>
+      <dt>token dostępu</dt><dd>Hasło jednorazowego przeznaczenia, generowane w interfejsie serwera. Zwykle ma datę ważności.</dd>
+      <dt>--show-origin</dt><dd>Przełącznik pokazujący, z którego pliku pochodzi każde ustawienie.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Czwarta część kończy temat serwera. Piąta zajmuje się tym, co dzieje się wokół gita w dużym projekcie — i całą klasą błędów, które wyglądają jak zepsuty kod, a są niedopasowaniem wersji.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>

@@ -30,7 +30,156 @@
   <h1>Chronione gałęzie i merge request</h1>
   <p class="subtitle">Chroniona gałąź to taka, na której zwykły push jest niemożliwy z definicji. Cała praca idzie przez MR — a MR ma własne, nieoczywiste konsekwencje dla przepisywania historii.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Chroniona gałąź to taka, na którą <strong>serwer nie przyjmuje zwykłego pusha</strong>. Nie jest to konwencja zespołu ani ustawienie w Twoim repozytorium — to odmowa po drugiej stronie.</li>
+      <li>Jedyną drogą do niej jest merge request: gałąź funkcyjna plus prośba o scalenie, którą ktoś przegląda i zatwierdza.</li>
+      <li>Otwarcie merge requesta zmienia status Twojej gałęzi: <strong>przestaje być prywatna</strong>. Od tego momentu przepisywanie jej ma koszt, którego wcześniej nie miało.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Ochrona · po stronie serwera, nie u Ciebie</div>
+    <h2>Czym różni się gałąź chroniona</h2>
+
+    <p>Z Twojej strony chroniona gałąź wygląda dokładnie jak każda inna: możesz ją wypisać, commitować na niej i widzieć w <code>git branch</code>. Różnica ujawnia się dopiero przy pushu, i to jest właśnie moment, w którym dowiadujesz się, że coś takiego w ogóle istnieje.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>push na chronioną gałąź</span><span>odmowa serwera</span></div>
+<pre><span class="cmd">git push origin master</span>
+<span class="err">remote: GitLab: You are not allowed to push code to protected branches on this project.</span>
+<span class="err">To gitlab.przyklad/projekt.git</span>
+<span class="err"> ! [remote rejected]   master -&gt; master (pre-receive hook declined)</span></pre>
+    </div>
+    <p class="konsola-opis">Znowu <code>[remote rejected]</code> — to nie jest problem z rozjazdem ani z Twoją historią.</p>
+
+    <p>Typowe ustawienia ochrony obejmują trzy rzeczy naraz. Po pierwsze, <strong>zakaz zwykłego pusha</strong> dla wszystkich poza wąską grupą. Po drugie, <strong>zakaz wymuszonego pusha</strong> — nawet dla tych, którzy mogą pushować normalnie. Po trzecie, <strong>zakaz usunięcia gałęzi</strong>, bo jest ono technicznie tą samą operacją co push pustej wartości.</p>
+
+    <p>Ochrona bywa też stopniowana: część projektów pozwala pushować na gałąź główną wąskiej grupie, a reszcie tylko przez merge request. Z Twojej perspektywy różnica jest niewidoczna aż do pierwszej próby, bo git nie ma jak zapytać serwera o uprawnienia z wyprzedzeniem.</p>
+
+    <p>Drugie z tych ustawień jest tym, dla którego cały mechanizm ma sens. Gałąź główna jest punktem odniesienia dla wszystkich; przepisanie jej historii oznaczałoby, że każdy w zespole ma nagle repozytorium będące rodzeństwem tego, co jest na serwerze. Ochrona odbiera możliwość zrobienia tego przez pomyłkę, i to nawet osobom, które mają do tego uprawnienia.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Merge request · trzy rzeczy naraz</div>
+    <h2>Co to właściwie jest</h2>
+
+    <p>Merge request — w niektórych narzędziach pull request — bywa mylony z operacją gita. Nie jest nią. Git nie ma pojęcia o merge requestach; to obiekt istniejący wyłącznie w systemie hostującym repozytorium, który robi trzy rzeczy naraz.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>co sklada sie na MR</span><span>trzy warstwy</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Merge request jako trzy warstwy: propozycja scalenia, miejsce recenzji i brama automatycznych kontroli">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="186" height="120" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="107" y="56" text-anchor="middle" font-size="10.5" fill="#e8a33d">propozycja</text>
+          <text x="107" y="80" text-anchor="middle" font-size="9.5" fill="#8b909b">scal galaz X</text>
+          <text x="107" y="96" text-anchor="middle" font-size="9.5" fill="#8b909b">do galezi Y</text>
+          <text x="107" y="124" text-anchor="middle" font-size="9" fill="#8b909b">to jest jedyna czesc</text>
+          <text x="107" y="138" text-anchor="middle" font-size="9" fill="#8b909b">dotyczaca gita</text>
+
+          <rect x="217" y="30" width="186" height="120" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="310" y="56" text-anchor="middle" font-size="10.5" fill="#4fc3c0">recenzja</text>
+          <text x="310" y="80" text-anchor="middle" font-size="9.5" fill="#8b909b">komentarze przypiete</text>
+          <text x="310" y="96" text-anchor="middle" font-size="9.5" fill="#8b909b">do linii i do SHA</text>
+          <text x="310" y="124" text-anchor="middle" font-size="9" fill="#9c82d8">to psuje przepisanie</text>
+          <text x="310" y="138" text-anchor="middle" font-size="9" fill="#9c82d8">historii</text>
+
+          <rect x="420" y="30" width="186" height="120" rx="10" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="513" y="56" text-anchor="middle" font-size="10.5" fill="#6e93be">brama</text>
+          <text x="513" y="80" text-anchor="middle" font-size="9.5" fill="#8b909b">testy, kontrole,</text>
+          <text x="513" y="96" text-anchor="middle" font-size="9.5" fill="#8b909b">wymagane zatwierdzenia</text>
+          <text x="513" y="124" text-anchor="middle" font-size="9" fill="#8b909b">musi przejsc,</text>
+          <text x="513" y="138" text-anchor="middle" font-size="9" fill="#8b909b">zeby przycisk zadzialal</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Tylko lewa kolumna ma odpowiednik w gicie. Dwie pozostałe to warstwa procesu.</div>
+    </div>
+
+    <p>Rozdzielenie tych trzech warstw pomaga zrozumieć, czemu niektóre rzeczy zachowują się dziwnie. Komentarze recenzenta są przypięte do konkretnego commita i konkretnej linii — więc kiedy przepiszesz gałąź, commit o tamtym skrócie przestaje być jej częścią i komentarz traci kotwicę. Część narzędzi radzi sobie z tym lepiej, część gorzej; żadne nie robi tego dobrze zawsze.</p>
+
+    <p>Z drugiej strony gałąź w merge requeście da się aktualizować normalnie: każdy push na nią jest widoczny od razu, bez zamykania i otwierania czegokolwiek. MR wskazuje na gałąź, a nie na jej zawartość w chwili otwarcia.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zmiana statusu · gałąź przestaje być Twoja</div>
+    <h2>Kiedy przepisywanie zaczyna kosztować</h2>
+
+    <p>W Rozdziale 17 padła lista pytań, na które trzeba odpowiedzieć twierdząco przed wymuszonym pushem. Otwarcie merge requesta zmienia odpowiedź na jedno z nich, i to jest praktycznie cała treść tego rozdziału.</p>
+
+    <ul class="compact">
+      <li><strong>Przed otwarciem MR-a</strong> gałąź jest kopią zapasową Twojej pracy. Przepisuj do woli.</li>
+      <li><strong>Po otwarciu, przed pierwszym komentarzem</strong> koszt jest nadal niewielki — nikt jeszcze niczego nie czytał.</li>
+      <li><strong>Po rozpoczęciu recenzji</strong> przepisanie oznacza, że recenzent traci punkt odniesienia i część komentarzy może przestać się do czegokolwiek odnosić.</li>
+    </ul>
+
+    <p>Nie znaczy to, że po otwarciu MR-a przepisywanie jest zakazane — czasem jest wręcz wymagane, na przykład gdy trzeba poprawić wiadomość commita, żeby przeszła kontrolę z Rozdziału 21. Znaczy tylko, że warto wtedy uprzedzić recenzenta jednym zdaniem, a poprawki po recenzji dokładać zwykłymi commitami zamiast amendem.</p>
+
+    <p>Częstą praktyką jest zresztą kompromis: <strong>w trakcie recenzji dokładasz commity</strong>, żeby widać było, co się zmieniło od ostatniego spojrzenia, a porządkujesz historię dopiero na końcu — albo robi to za Ciebie przycisk scalający, o czym mówi następny rozdział.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Rodzina gałęzi · nie tylko główna bywa chroniona</div>
+    <h2>Gdzie kończy się Twoja swoboda</h2>
+
+    <p>W projektach, które coś wydają, chronionych gałęzi jest zwykle kilka i warto rozumieć, czym się różnią — bo reguły przepisywania historii są dla nich takie same, a konsekwencje pomyłki rosną w prawo.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>od najswobodniejszej do najsztywniejszej</span><span>i co wolno</span></div>
+      <svg viewBox="0 0 620 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cztery poziomy gałęzi od funkcyjnej do wydaniowej, z malejącą swobodą">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="42" width="140" height="76" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="84" y="66" text-anchor="middle" font-size="10.5" fill="#4fc3c0">funkcyjna</text>
+          <text x="84" y="88" text-anchor="middle" font-size="9" fill="#8b909b">przepisywanie</text>
+          <text x="84" y="102" text-anchor="middle" font-size="9" fill="#4fc3c0">dozwolone</text>
+
+          <rect x="166" y="42" width="140" height="76" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="236" y="66" text-anchor="middle" font-size="10.5" fill="#e8a33d">w recenzji</text>
+          <text x="236" y="88" text-anchor="middle" font-size="9" fill="#8b909b">przepisywanie</text>
+          <text x="236" y="102" text-anchor="middle" font-size="9" fill="#e8a33d">z uprzedzeniem</text>
+
+          <rect x="318" y="42" width="140" height="76" rx="10" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="388" y="66" text-anchor="middle" font-size="10.5" fill="#6e93be">glowna</text>
+          <text x="388" y="88" text-anchor="middle" font-size="9" fill="#8b909b">tylko przez MR,</text>
+          <text x="388" y="102" text-anchor="middle" font-size="9" fill="#d2685a">bez przepisywania</text>
+
+          <rect x="470" y="42" width="136" height="76" rx="10" fill="#1b1e24" stroke="#d2685a"/>
+          <text x="538" y="66" text-anchor="middle" font-size="10.5" fill="#d2685a">wydaniowa</text>
+          <text x="538" y="88" text-anchor="middle" font-size="9" fill="#8b909b">jak wyzej, plus</text>
+          <text x="538" y="102" text-anchor="middle" font-size="9" fill="#d2685a">wezsza grupa osob</text>
+
+          <text x="14" y="152" font-size="10.5" fill="#8b909b">im dalej w prawo, tym wiecej osob i procesow opiera sie na tym refie</text>
+          <text x="14" y="170" font-size="10.5" fill="#8b909b">&#8212; i tym drozsza jest kazda zmiana pod ich reka</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Reguła jest jedna i ta sama we wszystkich czterech przypadkach; różni je liczba osób, dla których ten ref jest punktem odniesienia.</div>
+    </div>
+
+    <p>Gałęzie wydaniowe mają jeszcze jedną właściwość, o której łatwo zapomnieć: <strong>poprawkę do wydania odbija się od nich, a nie od gałęzi głównej</strong>. Gałąź odbita od głównej niesie ze sobą wszystko, co od czasu wydania zdążyło wejść — a to jest zwykle dokładnie to, czego w wydaniu być nie miało.</p>
+
+    <p>W takich sytuacjach przydaje się <code>cherry-pick</code> z Rozdziału 19: poprawka powstaje raz, a jej kopia trafia na drugą gałąź. To jeden z niewielu przypadków, w których świadome zduplikowanie commita jest właściwą odpowiedzią, bo obie gałęzie i tak nigdy się nie spotkają.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Jeśli przez pomyłkę zacommitowałeś na chronionej gałęzi lokalnie, nic się nie stało — dowiesz się o tym dopiero przy pushu i nic nie wyjechało. Wyjście jest proste: <code>git switch -c ABC-1234</code> tworzy gałąź w tym miejscu, a potem <code>git switch master</code> i <code>git reset --hard origin/master</code> cofa lokalną kopię gałęzi głównej tam, gdzie powinna być.</p>
+    <p>Warto raz sprawdzić w ustawieniach projektu, które gałęzie są chronione i jaka jest metoda scalania — to jedno spojrzenie tłumaczy z góry połowę zachowań, które inaczej wyglądają na przypadkowe.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>gałąź chroniona</dt><dd>Ref, na który serwer nie przyjmuje zwykłego pusha od zwykłych uczestników.</dd>
+      <dt>merge request / pull request</dt><dd>Propozycja scalenia gałęzi wraz z warstwą recenzji i automatycznych kontroli. Nie jest pojęciem gita.</dd>
+      <dt>gałąź źródłowa / docelowa</dt><dd>Ta, którą scalasz, i ta, do której. MR wskazuje na obie po nazwie, nie po skrócie.</dd>
+      <dt>zatwierdzenie (approval)</dt><dd>Formalna zgoda recenzenta, często wymagana przez ustawienia projektu przed scaleniem.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Zostaje ostatnia rzecz, która dzieje się bez Twojego udziału: naciśnięcie przycisku scalającego. Robi on jedną z trzech różnych operacji, a to, którą, zdecydował ktoś inny w ustawieniach projektu.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
