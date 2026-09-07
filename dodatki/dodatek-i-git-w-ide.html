@@ -28,7 +28,67 @@
   <h1>Git w IDE: co ten przycisk uruchamia</h1>
   <p class="subtitle">Tłumaczenie interfejsu na komendy — dla PyCharma i VS Code — plus miejsca, w których IDE pokazuje coś innego, niż myślisz.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Założenie</div>
+    <h2>Interfejs to nakładka, nie inny git</h2>
+
+    <p>Każdy przycisk w IDE uruchamia komendę gita — tę samą, którą wpisałbyś w terminalu. Nie ma osobnej implementacji ani innych reguł; są tylko inne nazwy i czasem inne wartości domyślne.</p>
+
+    <p>Wynika stąd praktyczna zasada: <strong>jeśli coś w interfejsie zachowuje się nieoczekiwanie, przetłumacz to na komendę</strong> i wróć do odpowiedniego rozdziału. Ten dodatek jest słownikiem takich tłumaczeń.</p>
+
+    <p>Warto też pamiętać o różnicy środowisk z Rozdziału 24: IDE bywa uruchamiane z innym <code>PATH</code>, innym agentem SSH, czasem inną instalacją gita. Dlatego „w terminalu działa, w IDE nie” jest zwykle różnicą środowiska, nie zachowania gita.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Tłumaczenie</div>
+    <h2>Przycisk po lewej, komenda po prawej</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>W interfejsie</th><th>Co uruchamia</th><th>Uwaga</th></tr></thead>
+        <tbody>
+          <tr><td>Commit</td><td><code>git add</code> + <code>git commit</code></td><td>zaznaczenie plików to <code>add</code>; sprawdź, kiedy dokładnie jest wykonywane (R.1)</td></tr>
+          <tr><td>Commit and Push</td><td>jak wyżej plus <code>git push</code></td><td>dwie operacje, dwa różne zestawy błędów</td></tr>
+          <tr><td>Update Project / Pull</td><td><code>git pull</code></td><td>tryb scalania zależy od ustawienia; sprawdź, czy to merge czy rebase (R.9)</td></tr>
+          <tr><td>Fetch</td><td><code>git fetch</code></td><td>bezpieczne zawsze; warto robić odruchowo</td></tr>
+          <tr><td>Push (Force Push)</td><td><code>git push --force</code> albo <code>--force-with-lease</code></td><td><strong>sprawdź który</strong> — różnica ujawnia się w najgorszym momencie (R.17)</td></tr>
+          <tr><td>New Branch</td><td><code>git switch -c</code></td><td>uważaj, od czego odbijasz (R.8)</td></tr>
+          <tr><td>Checkout</td><td><code>git switch</code></td><td>przy commicie zamiast gałęzi daje odczepiony HEAD (R.4)</td></tr>
+          <tr><td>Undo Commit</td><td><code>git reset --soft HEAD~1</code></td><td>zwykle miękki; praca zostaje w indeksie</td></tr>
+          <tr><td>Drop Commit</td><td><code>git rebase</code> z pominięciem</td><td>przepisuje historię (R.14)</td></tr>
+          <tr><td>Revert Commit</td><td><code>git revert</code></td><td>dopisuje commit; jedyny bezpieczny wariant na wspólnej gałęzi</td></tr>
+          <tr><td>Rollback / Revert Changes</td><td><code>git restore</code></td><td>mimo nazwy dotyczy plików, nie commitów</td></tr>
+          <tr><td>Shelve / Stash</td><td><code>git stash</code></td><td>część IDE ma własny mechanizm poza gitem — to nie to samo</td></tr>
+          <tr><td>Interactive Rebase</td><td><code>git rebase -i</code></td><td>ta sama lista poleceń, tylko w oknie</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Nazwy różnią się między narzędziami; komendy nie.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Miejsca, w których interfejs pokazuje co innego</div>
+    <h2>Cztery rzeczy warte sprawdzenia</h2>
+
+    <p><strong>Liczba commitów w oknie pusha.</strong> Policzona względem gałęzi zdalnej o tej samej nazwie, czyli względem ostatniego pusha. Po rebasie potrafi być kilkadziesiąt razy większa od tego, co wnosisz. Rozdział 29 opisuje to szczegółowo; sprawdzenie to <code>git log --oneline origin/master..HEAD</code>.</p>
+
+    <p><strong>„Up to date”.</strong> Oznacza zgodność z lokalną kopią stanu serwera, nie z serwerem. Jeśli IDE nie odświeżało refów zdalnych, informacja może być sprzed dni (R.9).</p>
+
+    <p><strong>Panel historii.</strong> Rysuje graf commitów, więc <strong>nie pokazuje commitów osieroconych</strong> — czyli dokładnie tych, których szukasz po nieudanym rebasie. Reflog bywa schowany pod nazwą w rodzaju „Recent operations” albo nie ma go wcale (R.18).</p>
+
+    <p><strong>Zaznaczanie plików do commita.</strong> Część narzędzi wykonuje <code>add</code> w chwili zaznaczenia, część dopiero przy commicie. Różnica decyduje o tym, czy poprawka zrobiona po zaznaczeniu wejdzie do commita. Warto sprawdzić to raz i zapamiętać (R.1).</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zalecenie</div>
+    <h2>Terminal obok, nie zamiast</h2>
+
+    <p>Ta książka nie namawia do porzucenia interfejsu graficznego. Do przeglądania zmian, rozstrzygania konfliktów w trzech kolumnach i codziennego commitowania bywa on wyraźnie wygodniejszy.</p>
+
+    <p>Warto natomiast trzymać obok otwarty terminal i używać go do trzech rzeczy, w których wygrywa zawsze: <strong>pytań o zakres</strong> (<code>origin/master..HEAD</code>), <strong>reflogu</strong> i <strong>diagnostyki konfiguracji</strong> (<code>git config --list --show-origin</code>). To są dokładnie te trzy obszary, w których interfejsy pokazują odpowiedź, nie mówiąc, na jakie pytanie.</p>
+
+    <p>Warto też znać jedno ustawienie, które ratuje w sytuacji odwrotnej: <code>git config --global core.editor</code> decyduje, co się otworzy przy <code>rebase -i</code> i przy pisaniu wiadomości commita. Jeśli wpisze się tam swój edytor, terminal przestaje wymagać znajomości edytora, którego się nie używa — a to jest najczęstszy powód, dla którego ludzie unikają interaktywnego rebase'u.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

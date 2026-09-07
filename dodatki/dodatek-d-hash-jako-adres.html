@@ -28,7 +28,82 @@
   <h1>Hash jako adres: SHA-1, kolizje, SHA-256</h1>
   <p class="subtitle">Dlaczego adresowanie treścią w ogóle działa, co się dzieje przy kolizji i po co gitowi przejście na SHA-256.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Punkt wyjścia</div>
+    <h2>Po co adresować treścią</h2>
+
+    <p>Rozdział 3 opisał regułę: adres obiektu jest skrótem jego zawartości. Ten dodatek pokazuje, co z tej reguły wynika dalej — i odpowiada na trzy pytania, które przy niej zawsze padają.</p>
+
+    <p>Pierwszą korzyścią jest <strong>deduplikacja za darmo</strong>. Dwa identyczne pliki mają ten sam skrót, więc są jednym obiektem, niezależnie od tego, w ilu katalogach i w ilu commitach występują. Nie potrzeba do tego żadnego mechanizmu wykrywania duplikatów — wynika to wprost z adresowania.</p>
+
+    <p>Drugą jest <strong>weryfikowalność</strong>. Skoro adres wynika z treści, to wystarczy przeliczyć treść, żeby sprawdzić, czy obiekt jest tym, za co się podaje. Robi to <code>git fsck</code>, i dzięki temu uszkodzenie dysku nie może przejść niezauważone.</p>
+
+    <p>Trzecią, najważniejszą dla tej książki, jest <strong>niezmienność</strong>: skoro inna treść to inny adres, to nie istnieje operacja zmiany obiektu w miejscu. Cała trzecia część książki jest konsekwencją tego jednego zdania.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Łańcuch</div>
+    <h2>Dlaczego historii nie da się po cichu zmienić</h2>
+
+    <p>Skrót commita liczy się z jego treści, a w tej treści jest skrót rodzica. Rodzic zawiera skrót swojego rodzica, i tak dalej aż do korzenia. Powstaje w ten sposób łańcuch, w którym <strong>każdy element potwierdza wszystko, co było przed nim</strong>.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>lancuch skrotow</span><span>zmiana propaguje w prawo</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zmiana w starym commicie zmienia jego skrót, a przez to skróty wszystkich potomków">
+        <g font-family="IBM Plex Mono, monospace">
+          <circle cx="60" cy="70" r="22" fill="#1b1e24" stroke="#d2685a" stroke-width="2"/>
+          <text x="60" y="74" text-anchor="middle" font-size="9" fill="#d2685a">zmieniony</text>
+          <circle cx="180" cy="70" r="22" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="300" cy="70" r="22" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="420" cy="70" r="22" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <path d="M 158 70 L 82 70" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 278 70 L 202 70" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 398 70 L 322 70" stroke="#2a2f38" stroke-width="2"/>
+
+          <text x="180" y="112" text-anchor="middle" font-size="9.5" fill="#d2685a">inny rodzic</text>
+          <text x="180" y="126" text-anchor="middle" font-size="9.5" fill="#d2685a">= inny skrot</text>
+          <text x="300" y="112" text-anchor="middle" font-size="9.5" fill="#d2685a">i tak dalej</text>
+          <text x="420" y="112" text-anchor="middle" font-size="9.5" fill="#d2685a">az do konca</text>
+
+          <text x="14" y="164" font-size="10.5" fill="#8b909b">nie da sie podmienic jednego commita &#8212; trzeba przebudowac cala reszte</text>
+          <text x="14" y="182" font-size="10.5" fill="#8b909b">a to jest dokladnie to, co robi rebase (R.14)</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ta sama własność jest raz zabezpieczeniem, a raz kosztem — zależnie od tego, czy zmiana jest zamierzona.</div>
+    </div>
+
+    <p>Warto zauważyć, że nie jest to zabezpieczenie kryptograficzne w sensie ochrony przed złośliwym działaniem — kto ma prawo zapisu, może zbudować dowolną historię. Jest to natomiast bardzo mocne zabezpieczenie przed <strong>zmianą niezauważoną</strong>: każda modyfikacja przeszłości jest widoczna jako zmiana skrótów wszystkiego, co po niej nastąpiło.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Kolizje</div>
+    <h2>SHA-1 jest złamany — i co z tego wynika</h2>
+
+    <p>Funkcja skrótu przypisuje dowolnie dużym danym wynik stałej długości, więc kolizje muszą istnieć: różnych możliwych treści jest nieskończenie wiele, a skrótów skończenie. Pytanie brzmi wyłącznie, czy da się kolizję <em>znaleźć</em>.</p>
+
+    <p>Dla SHA-1 odpowiedź brzmi: tak, i pokazano to publicznie w 2017 roku, konstruując dwa różne pliki o identycznym skrócie. Nie znaczy to jednak, że repozytoria przestały działać, i warto rozumieć, dlaczego.</p>
+
+    <ul class="compact">
+      <li><strong>Kolizja przypadkowa nie zdarza się.</strong> Prawdopodobieństwo trafienia dwóch obiektów w ten sam skrót przy normalnej pracy jest tak małe, że nie warto go rozważać.</li>
+      <li><strong>Kolizję trzeba spreparować</strong>, a to wymaga kontroli nad obydwoma dokumentami i ogromnego nakładu obliczeń.</li>
+      <li><strong>Git wykrywa znany atak.</strong> Od 2017 roku rozpoznaje charakterystyczny wzorzec używany do konstruowania kolizji i odmawia zapisania takiego obiektu.</li>
+    </ul>
+
+    <p>Docelowym rozwiązaniem jest zmiana funkcji skrótu. Git ma zaimplementowany tryb SHA-256 i repozytorium da się dziś utworzyć z takim adresowaniem. Przeszkodą nie jest sama funkcja, tylko ekosystem: skróty pojawiają się w komunikatach, w systemach zgłoszeń, w konfiguracjach i w narzędziach, a przejście wymaga, żeby wszystko to je rozumiało.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Czego skrót nie robi</div>
+    <h2>Adres to nie podpis</h2>
+
+    <p>Najczęstsze nieporozumienie wokół skrótów dotyczy autorstwa. Commit zawiera pole autora, a całość ma skrót — z czego łatwo wyciągnąć wniosek, że skrót potwierdza, kto go napisał. Nie potwierdza.</p>
+
+    <p>Pole autora jest zwykłym tekstem, wpisywanym z lokalnej konfiguracji. Można w nim wpisać cokolwiek, a skrót policzy się poprawnie od tej treści — bo skrót mówi wyłącznie „ta zawartość jest taka”, a nie „ta zawartość pochodzi od tej osoby”.</p>
+
+    <p>Do potwierdzania autorstwa służy osobny mechanizm: <strong>podpisy</strong>. <code>git commit -S</code> dołącza do commita podpis kryptograficzny, a <code>git log --show-signature</code> pozwala go zweryfikować. Jest to zupełnie niezależne od adresowania treścią i wymaga własnej konfiguracji kluczy.</p>
+
+    <p>Praktyczny wniosek dla codziennej pracy: skrótom można ufać jako adresom i jako wykrywaczom uszkodzeń. Nie należy ich natomiast traktować jako dowodu, że commit napisała osoba, która jest w nim wpisana — zwłaszcza w kontekstach, w których to rozróżnienie ma znaczenie.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

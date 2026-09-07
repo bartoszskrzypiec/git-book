@@ -28,7 +28,113 @@
   <h1>Anatomia katalogu .git</h1>
   <p class="subtitle">Co naprawdę leży w .git: obiekty, refy, HEAD, packfile. Zwiedzanie z cat-file w ręku, na jednorazowym repozytorium.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Wycieczka</div>
+    <h2>Co leży w katalogu <code>.git</code></h2>
+
+    <p>Wszystko, co ta książka opisuje jako model, jest w tym katalogu widoczne gołym okiem. Warto raz przejść się po nim z komendami w ręku — najlepiej w jednorazowym repozytorium, założonym specjalnie na tę okazję.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>ls .git</span><span>świeże repozytorium z dwoma commitami</span></div>
+<pre><span class="cmd">ls .git</span>
+COMMIT_EDITMSG   config      hooks    info    logs
+HEAD             description index    objects refs</pre>
+    </div>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Pozycja</th><th>Co to jest</th></tr></thead>
+        <tbody>
+          <tr><td><code>objects/</code></td><td>wszystkie obiekty: commity, drzewa, blob-y. Jedyne miejsce z treścią</td></tr>
+          <tr><td><code>refs/</code></td><td>gałęzie, tagi i refy zdalne — pliki po 41 bajtów</td></tr>
+          <tr><td><code>HEAD</code></td><td>wskaźnik na bieżącą gałąź (Rozdział 4)</td></tr>
+          <tr><td><code>index</code></td><td>plik binarny z zawartością indeksu (Rozdział 1)</td></tr>
+          <tr><td><code>logs/</code></td><td>reflog: historia wartości refów (Rozdział 18)</td></tr>
+          <tr><td><code>config</code></td><td>konfiguracja tego repozytorium</td></tr>
+          <tr><td><code>hooks/</code></td><td>lokalne hooki, domyślnie same przykłady (Rozdział 20)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Siedem pozycji. Nie ma tu żadnej bazy danych ani dziennika transakcji.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Obiekty</div>
+    <h2>Adres jest ścieżką</h2>
+
+    <p>Katalog <code>objects</code> wygląda dziwnie, dopóki nie zauważy się reguły: <strong>nazwa podkatalogu to dwa pierwsze znaki skrótu</strong>, a nazwa pliku — pozostałe trzydzieści osiem.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>objects</span><span>adres zamieniony na ścieżkę</span></div>
+<pre><span class="cmd">ls .git/objects</span>
+05  2b  91  b9  ce  d6  ec  info
+
+<span class="cmd">git rev-parse HEAD</span>
+<span class="sha">b9c30732f303dcf5cf4bd526da67b6da07118ca6</span>
+
+<span class="komentarz"># ten sam obiekt jako plik:</span>
+.git/objects/<span class="sha">b9</span>/<span class="sha">c30732f303dcf5cf4bd526da67b6da07118ca6</span></pre>
+    </div>
+    <p class="konsola-opis">Podział na dwa znaki istnieje wyłącznie po to, żeby nie trzymać dziesiątek tysięcy plików w jednym katalogu.</p>
+
+    <p>Obiekty są skompresowane, więc nie da się ich przeczytać zwykłym poleceniem — od tego jest <code>git cat-file</code>. Przełącznik <code>-t</code> podaje typ, <code>-s</code> rozmiar, <code>-p</code> wypisuje treść:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git cat-file</span><span>typ i rozmiar sześciu obiektów</span></div>
+<pre>commit  201  b9c3073
+commit  160  d63f706
+tree     74  2b6f655
+tree     37  91e2a2e
+blob      9  ec38e55
+blob      7  05cbc96</pre>
+    </div>
+    <p class="konsola-opis">Całe repozytorium z dwoma commitami: sześć obiektów, łącznie niecałe pięćset bajtów.</p>
+
+    <p>Zwróć uwagę na rozmiary. Commit to dwieście bajtów, bo zawiera tylko metadane i wskaźniki. Drzewo — kilkadziesiąt, bo to lista wpisów. Cała treść siedzi w blob-ach, a te są dokładnie tak duże, jak pliki, które opisują.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Refy i HEAD</div>
+    <h2>Trzydzieści bajtów, od których wszystko zależy</h2>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>refs i HEAD</span><span>zwykłe pliki tekstowe</span></div>
+<pre><span class="cmd">cat .git/HEAD</span>
+<span class="ref">ref: refs/heads/master</span>
+
+<span class="cmd">cat .git/refs/heads/master</span>
+<span class="sha">b9c30732f303dcf5cf4bd526da67b6da07118ca6</span>
+
+<span class="cmd">cat .git/logs/HEAD</span>
+0000000... b9c3073... Ty &lt;ty@example.com&gt; 1788808038 +0200  commit: Dodaj renderer</pre>
+    </div>
+
+    <p>Trzecia z tych komend pokazuje reflog w postaci surowej. Każda linia to: stara wartość, nowa wartość, autor, czas i opis operacji. Dokładnie to, co wypisuje <code>git reflog</code>, tylko bez upiększeń — i widać tu, że reflog jest <strong>zwykłym plikiem dopisywanym linia po linii</strong>.</p>
+
+    <p>Jest jeszcze jedno miejsce, w którym warto zajrzeć: <code>.git/packed-refs</code>. Przy większej liczbie gałęzi git przenosi refy z osobnych plików do jednego wspólnego, żeby nie trzymać tysięcy czterdziestobajtowych plików. Jeśli więc <code>ls .git/refs/heads</code> pokazuje mniej gałęzi, niż wypisuje <code>git branch</code>, to właśnie dlatego.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pakowanie</div>
+    <h2>Dlaczego repozytorium nie puchnie</h2>
+
+    <p>Skoro każda wersja pliku to osobny blob z pełną treścią, repozytorium powinno rosnąć bardzo szybko. Nie rośnie, bo git co jakiś czas <strong>pakuje</strong> obiekty: zapisuje je razem w jednym pliku i przechowuje podobne obiekty różnicowo.</p>
+
+    <p>Jest to operacja czysto techniczna i całkowicie niewidoczna z poziomu modelu: obiekty nadal mają te same adresy i tę samą treść, zmienia się wyłącznie sposób zapisu na dysku. Uruchamia ją <code>git gc</code>, wołane automatycznie przy niektórych operacjach.</p>
+
+    <p>Przy okazji pakowania git usuwa obiekty, do których nic nie prowadzi <strong>i którym minął termin z reflogu</strong>. To jest ten moment, w którym porzucony commit naprawdę znika — nie w chwili amendu ani resetu.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git count-objects -vH</span><span>ile czego jest</span></div>
+<pre><span class="cmd">git count-objects -vH</span>
+count: 6            <span class="komentarz"># obiekty luzne</span>
+size: 24.00 KiB
+in-pack: 0          <span class="komentarz"># obiekty w plikach spakowanych</span>
+size-pack: 0 bytes</pre>
+    </div>
+
+    <p>Warto tę komendę znać przy diagnozowaniu repozytoriów, które ważą podejrzanie dużo. Wysoka wartość <code>size-pack</code> przy niewielkim drzewie roboczym oznacza zwykle, że w historii siedzą duże pliki binarne — a te, jak mówi Rozdział 7, zostają tam na zawsze.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

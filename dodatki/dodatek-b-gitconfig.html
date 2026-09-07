@@ -28,7 +28,105 @@
   <h1>Konfiguracja, którą warto mieć</h1>
   <p class="subtitle">Aliasy, rerere, pull.rebase, ustawienia diffa — z uzasadnieniem przy każdej pozycji, żeby dało się je świadomie odrzucić.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Zasada</div>
+    <h2>Każde ustawienie ma mieć powód</h2>
+
+    <p>Konfiguracje gita krążą po sieci jako gotowe pliki do skopiowania i to jest najgorszy sposób ich używania. Ustawienie, którego nie rozumiesz, zmienia zachowanie narzędzia w sposób, którego nie przewidzisz — a potem szukasz przyczyny w gicie.</p>
+
+    <p>Poniżej każda pozycja ma uzasadnienie i wskazanie, gdzie w książce opisany jest mechanizm, którego dotyczy. Wszystkie są <strong>opcjonalne</strong>: to lista do świadomego wyboru, nie plik do wklejenia.</p>
+
+    <p>Ustawiasz je przez <code>git config --global &lt;klucz&gt; &lt;wartosc&gt;</code>, a sprawdzasz przez <code>git config --list --show-origin</code>. Pamiętaj o trzech poziomach z Rozdziału 24: to, co ustawisz globalnie, może być nadpisane w konkretnym repozytorium.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Bezpieczeństwo</div>
+    <h2>Cztery ustawienia, które chronią przed sobą samym</h2>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>bezpieczniejsze domyślne</span><span>zalecane</span></div>
+<pre><span class="cmd">git config --global pull.rebase true</span>
+<span class="komentarz"># pull nie tworzy commitow scalajacych przy nadrabianiu zaleglosci (R.10)</span>
+
+<span class="cmd">git config --global push.default simple</span>
+<span class="komentarz"># push wysyla wylacznie biezaca galaz, i to pod ta sama nazwa (R.16)</span>
+
+<span class="cmd">git config --global push.autoSetupRemote true</span>
+<span class="komentarz"># pierwszy push nowej galezi sam zapisuje upstream, bez -u (R.8)</span>
+
+<span class="cmd">git config --global alias.pushf "push --force-with-lease"</span>
+<span class="komentarz"># gole --force zostaje o kilka znakow dalej niz wariant bezpieczny (R.17)</span></pre>
+    </div>
+
+    <p>Ostatnia pozycja nie jest ustawieniem, tylko aliasem — ale należy do tej grupy, bo jej celem jest to samo: <strong>uczynić bezpieczny wariant tym łatwiejszym</strong>. Odruch sięga po to, co krótsze.</p>
+
+    <p>Warto rozważyć jeszcze jedno, o którym mało kto wie: <code>git config --global rebase.autoStash true</code>. Sprawia, że rebase z niezacommitowanymi zmianami sam je odkłada i przywraca, zamiast odmawiać. Wygodne, ale świadomie — bo oznacza, że rebase zaczyna dotykać katalogu roboczego.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wygoda</div>
+    <h2>Aliasy, które zarabiają na siebie</h2>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>aliasy</span><span>skróty do rzeczy robionych codziennie</span></div>
+<pre><span class="cmd">git config --global alias.graf "log --oneline --graph --all --decorate"</span>
+<span class="komentarz"># caly graf jednym slowem (R.12)</span>
+
+<span class="cmd">git config --global alias.moje "log --oneline origin/master..HEAD"</span>
+<span class="komentarz"># co wnosze ponad galaz glowna &#8212; odpowiedz na wlasciwe pytanie (R.29)</span>
+
+<span class="cmd">git config --global alias.st "status -sb"</span>
+<span class="komentarz"># krotki status z informacja ahead/behind</span>
+
+<span class="cmd">git config --global alias.ostatni "log -1 --pretty=%s"</span>
+<span class="komentarz"># sama wiadomosc ostatniego commita &#8212; kontrola przed pushem (R.13)</span></pre>
+    </div>
+
+    <p>Alias może wołać dowolną komendę gita, także z argumentami. Jeśli zaczyna się od wykrzyknika, git uruchamia go jako polecenie powłoki — to bywa przydatne, ale też jest najprostszym sposobem, żeby zrobić sobie krzywdę w cudzej konfiguracji.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Rozstrzyganie konfliktów</div>
+    <h2>Dwa ustawienia, które oszczędzają powtarzanie</h2>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>konflikty</span><span>zapamiętywanie i lepszy kontekst</span></div>
+<pre><span class="cmd">git config --global rerere.enabled true</span>
+<span class="komentarz"># zapamietuje rozwiazany konflikt i stosuje go ponownie (R.10, R.14)</span>
+
+<span class="cmd">git config --global merge.conflictStyle zdiff3</span>
+<span class="komentarz"># markery pokazuja TAKZE wersje wspolnego przodka (R.11)</span></pre>
+    </div>
+
+    <p>Drugie z tych ustawień zmienia to, co widzisz w pliku przy konflikcie: oprócz Twojej i cudzej wersji pojawia się także <strong>wersja bazowa</strong>. To zwykle rozstrzyga pytanie, która strona co zmieniła — bo bez bazy widać tylko dwa warianty, bez informacji, który z nich jest odejściem od stanu wyjściowego.</p>
+
+    <p>Pierwsze przydaje się szczególnie przy rebasie długiej gałęzi, gdzie ten sam konflikt potrafi wrócić przy kilku commitach z rzędu. Warto wiedzieć, że rerere zapamiętuje rozwiązania lokalnie i nie dzieli się nimi z nikim.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Tożsamość i higiena</div>
+    <h2>Reszta</h2>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>podstawy</span><span>warto ustawić raz na maszynie</span></div>
+<pre><span class="cmd">git config --global user.name "Imie Nazwisko"</span>
+<span class="cmd">git config --global user.email "adres@firma"</span>
+<span class="komentarz"># w konkretnym repo mozna nadpisac bez --global (R.24)</span>
+
+<span class="cmd">git config --global core.autocrlf input</span>
+<span class="komentarz"># albo true na Windowsie &#8212; zalezy od konwencji projektu</span>
+
+<span class="cmd">git config --global core.excludesFile ~/.gitignore_global</span>
+<span class="komentarz"># smieci edytora i systemu, poza repozytorium projektu (R.7)</span>
+
+<span class="cmd">git config --global fetch.prune true</span>
+<span class="komentarz"># kazdy fetch sprzata nieistniejace juz galezie zdalne (R.8)</span></pre>
+    </div>
+
+    <p>Ustawienie <code>core.autocrlf</code> zasługuje na ostrzeżenie: dotyczy zamiany znaków końca linii i potrafi wygenerować diff obejmujący cały plik, jeśli jest ustawione niespójnie w zespole. Jeżeli projekt ma plik <code>.gitattributes</code>, to on decyduje i lepiej mu nie przeszkadzać.</p>
+
+    <p>Na koniec jedno ustawienie, którego <strong>nie warto</strong> włączać bez potrzeby: automatyczne podpisywanie commitów. Jest sensowne tam, gdzie projekt tego wymaga, ale bez działającej konfiguracji kluczy zamienia każdy commit w potencjalny błąd — a nie daje nic, dopóki nikt tych podpisów nie sprawdza.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

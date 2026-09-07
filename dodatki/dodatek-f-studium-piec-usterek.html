@@ -28,7 +28,102 @@
   <h1>Studium przypadku: pięć usterek, jedna przyczyna</h1>
   <p class="subtitle">Pierwsze uruchomienie gałęzi po dłuższej przerwie, na dwóch maszynach. Żadna z awarii nie miała związku z nowym kodem.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Sytuacja</div>
+    <h2>Pierwsze uruchomienie gałęzi po dłuższej przerwie</h2>
+
+    <p>Fikcyjny projekt, gałąź <code>ABC-1234</code> z jedną zmianą, dwie maszyny w dwóch lokalizacjach. Zadanie: uruchomić gałąź w trybie roboczym i sprawdzić, czy nowe narzędzie działa. Po drodze wyskoczyło pięć osobnych usterek.</p>
+
+    <p><strong>Żadna z nich nie miała związku z nową zmianą.</strong> Wszystkie istniały wcześniej; test odsłonił je, bo to był pierwszy raz od dłuższego czasu, gdy ktoś uruchamiał tę gałąź od zera, na dwóch różnych maszynach.</p>
+
+    <p>Historia jest warta prześledzenia nie ze względu na szczegóły, tylko ze względu na to, że trzy z pięciu usterek to <strong>ten sam mechanizm</strong> — opisany w Rozdziale 27 — a rozpoznanie go za pierwszym razem oszczędziłoby kilka godzin.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Oś czasu</div>
+    <h2>Pięć zdarzeń, po kolei</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>#</th><th>Objaw</th><th>Rodzaj</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><code>ImportError</code>: brak nazwy w module biblioteki</td><td><span class="term-przepis">niedopasowanie wersji</span></td></tr>
+          <tr><td>2</td><td><code>could not read Username</code> przy pushu</td><td><span class="term-serwer">środowisko maszyny</span></td></tr>
+          <tr><td>3</td><td>okno pusha: „58 commitów, 108 plików”</td><td><span class="term-ref">fałszywy alarm</span></td></tr>
+          <tr><td>4</td><td><code>TypeError</code>: brakujący argument metody</td><td><span class="term-przepis">niedopasowanie wersji</span></td></tr>
+          <tr><td>5</td><td>ten sam <code>TypeError</code> wraca po naprawie</td><td><span class="term-przepis">niedopasowanie wersji</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Trzy pozycje tego samego rodzaju, rozdzielone dwiema zupełnie innymi. To dlatego wzorzec był trudny do zauważenia.</p>
+
+    <p><strong>Zdarzenie 1.</strong> Gałąź była w tyle o kilkadziesiąt commitów. Jeden z nich zmieniał nazwę klasy w bibliotece i w tym samym commicie poprawiał jej użycia — spójna para. Moduł z narzędziem był podłączony wprost do katalogu roboczego, więc uruchamiał <em>starą</em> wersję konsumenta; biblioteka przychodziła z wydania i była <em>nowa</em>. Połowa pary. Naprawa: <code>git rebase origin/master</code>.</p>
+
+    <p><strong>Zdarzenie 2.</strong> Na tej konkretnej maszynie brakowało w <code>PATH</code> programu obsługującego zapisane poświadczenia. Zero związku z kodem i z gałęzią — czysto lokalny problem stacji, opisany w Rozdziale 24. Obejście: push z innego, działającego środowiska.</p>
+
+    <p><strong>Zdarzenie 3.</strong> Po rebasie okno pusha pokazało kilkadziesiąt commitów i setkę plików. Gałąź niosła jeden własny commit; okno porównywało ją ze starą gałęzią zdalną, niepushowaną od tygodni. Artefakt porównania z Rozdziału 29. Weryfikacja: <code>git log origin/master..HEAD</code> pokazał dokładnie jeden commit.</p>
+
+    <p><strong>Zdarzenie 4.</strong> Na drugiej maszynie ten sam wzorzec co w pierwszym zdarzeniu, ale dla innego modułu. Tym razem moduł <em>nigdy</em> nie był budowany lokalnie, więc zawsze przychodził z wydania — nowszy niż kod gałęzi. Naprawa: zbudowanie go lokalnie.</p>
+
+    <p><strong>Zdarzenie 5.</strong> Po naprawie z punktu czwartego ten sam błąd wrócił. Przyczyną było błędne założenie, że katalog z lokalnie zbudowanymi modułami jest współdzielony między wszystkimi maszynami. Jest — ale tylko w obrębie jednej lokalizacji. Build wykonany w pierwszej nigdy nie dotarł do drugiej. Naprawa: zbudowanie na miejscu, opisane w Rozdziale 28.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wspólny mianownik</div>
+    <h2>Jeden model tłumaczy trzy z pięciu</h2>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>skad pochodzi modul</span><span>trzy sposoby na polowe pary</span></div>
+      <svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy drogi do niedopasowania wersji: stara gałąź, moduł nigdy nie budowany, build w innej lokalizacji">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="180" y="18" width="260" height="40" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="310" y="43" text-anchor="middle" font-size="10.5" fill="#e8a33d">masz polowe spojnej pary zmian</text>
+
+          <path d="M 240 60 L 110 96" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 310 60 L 310 96" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 380 60 L 510 96" stroke="#2a2f38" stroke-width="1.5"/>
+
+          <rect x="14" y="100" width="186" height="80" rx="8" fill="#1b1e24" stroke="#9c82d8"/>
+          <text x="107" y="124" text-anchor="middle" font-size="10" fill="#9c82d8">galaz jest stara</text>
+          <text x="107" y="146" text-anchor="middle" font-size="9.5" fill="#8b909b">zdarzenie 1</text>
+          <text x="107" y="166" text-anchor="middle" font-size="9.5" fill="#4fc3c0">rebase</text>
+
+          <rect x="217" y="100" width="186" height="80" rx="8" fill="#1b1e24" stroke="#9c82d8"/>
+          <text x="310" y="124" text-anchor="middle" font-size="10" fill="#9c82d8">modul nigdy</text>
+          <text x="310" y="140" text-anchor="middle" font-size="10" fill="#9c82d8">nie budowany lokalnie</text>
+          <text x="310" y="160" text-anchor="middle" font-size="9.5" fill="#8b909b">zdarzenie 4</text>
+          <text x="310" y="176" text-anchor="middle" font-size="9.5" fill="#4fc3c0">zbuduj go</text>
+
+          <rect x="420" y="100" width="186" height="80" rx="8" fill="#1b1e24" stroke="#9c82d8"/>
+          <text x="513" y="124" text-anchor="middle" font-size="10" fill="#9c82d8">build w innej</text>
+          <text x="513" y="140" text-anchor="middle" font-size="10" fill="#9c82d8">lokalizacji</text>
+          <text x="513" y="160" text-anchor="middle" font-size="9.5" fill="#8b909b">zdarzenie 5</text>
+          <text x="513" y="176" text-anchor="middle" font-size="9.5" fill="#4fc3c0">zbuduj na miejscu</text>
+
+          <text x="14" y="212" font-size="10.5" fill="#8b909b">jeden objaw, trzy przyczyny &#8212; i za kazdym razem wyglada to jak zepsuty kod</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Kod uruchomiony w trybie roboczym jest zawsze mieszanką dwóch źródeł, moduł po module.</div>
+    </div>
+
+    <p>Warto powtórzyć zdanie, które jest sednem całej tej historii: <strong>to nie był zepsuty kod</strong>. Zmiany w bibliotekach rdzeniowych bywają rozbite na parę — coś w bibliotece plus dopasowany do niej konsument, wprowadzane razem w jednym commicie. Jeśli u siebie masz tylko połowę tej pary, dostajesz błąd wyglądający jak błąd programisty.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Na przyszłość</div>
+    <h2>Sześć odruchów</h2>
+
+    <ul class="compact">
+      <li><strong>Zrób świeży rebase przed testem</strong>, zwłaszcza po dłuższej przerwie na gałęzi. Zanim w ogóle uruchomisz cokolwiek.</li>
+      <li><strong>Błąd importu albo sygnatury w trybie roboczym nie oznacza, że Twój kod jest zepsuty.</strong> Sprawdź najpierw, czy moduł, w którym pęka, masz w ogóle zbudowany lokalnie.</li>
+      <li><strong>Moduły rdzeniowe zmieniają się bez pytania Cię o zdanie.</strong> Jeśli nie masz ich zbudowanych u siebie, dostajesz zawsze najnowsze wydanie, a nie tę wersję, którą pamiętasz.</li>
+      <li><strong>Katalog z lokalnymi buildami jest per lokalizacja, nie globalny.</strong> Testujesz na maszynie w innej sieci — zbuduj tam od nowa. Nic się samo nie przeniesie, nawet jeśli ścieżka wygląda identycznie.</li>
+      <li><strong>Zanim wpadniesz w panikę na widok listy commitów w oknie pusha</strong> — sprawdź realny zakres względem gałęzi docelowej, a nie samą liczbę.</li>
+      <li><strong>Problemy środowiska potrafią wyglądać jak problemy z kodem.</strong> Jeśli komunikat nie ma nic wspólnego z Twoją zmianą, podejrzewaj najpierw stację, nie gałąź.</li>
+    </ul>
+
+    <p>Ostatnia uwaga, drobna, ale kosztowała w tej historii kilkanaście minut: przy porównywaniu logów z dwóch maszyn w różnych strefach czasowych łatwo pomylić kolejność zdarzeń. Wpis wyglądający na starszy potrafi być nowszy — i prowadzi wprost do fałszywych wniosków o tym, co po czym nastąpiło.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

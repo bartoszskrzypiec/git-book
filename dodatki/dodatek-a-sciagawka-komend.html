@@ -28,7 +28,120 @@
   <h1>Ściągawka: co ta komenda robi z grafem</h1>
   <p class="subtitle">Wszystkie komendy z książki na jednej stronie, opisane nie tym, jak się je wpisuje, ale tym, co przestawiają w grafie.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Zasada porządkowania</div>
+    <h2>Nie po nazwie, tylko po skutku</h2>
+
+    <p>Ściągawki zwykle porządkują komendy alfabetycznie albo tematycznie. Ta jest ułożona według tego, <strong>co komenda robi z grafem</strong> — bo to jest jedyny podział, z którego coś wynika. Trzy grupy, a w każdej odpowiedź na inne pytanie.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Grupa</th><th>Co robi</th><th>Czy da się cofnąć</th></tr></thead>
+        <tbody>
+          <tr><td><span class="term-ref">przesuwa wskaźnik</span></td><td>zmienia wartość refa albo HEAD</td><td>tak — poprzednia wartość jest w reflogu</td></tr>
+          <tr><td><span class="term-obiekt">buduje obiekty</span></td><td>tworzy nowe commity, drzewa, blob-y</td><td>tak — stare obiekty zostają</td></tr>
+          <tr><td><span class="term-serwer">rozmawia z serwerem</span></td><td>przesyła obiekty, prosi o zmianę refa</td><td>zależy — jedyna grupa widoczna dla innych</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Czwartej grupy nie ma. Wszystko, co robi git, mieści się w tych trzech.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa I</div>
+    <h2>Przesuwa wskaźnik</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Komenda</th><th>Co robi z grafem</th></tr></thead>
+        <tbody>
+          <tr><td><code>git switch &lt;galaz&gt;</code></td><td>przestawia HEAD na inną gałąź i układa pliki wg jej migawki</td></tr>
+          <tr><td><code>git switch -c &lt;nazwa&gt;</code></td><td>tworzy nowy ref w bieżącym miejscu i przypina do niego HEAD</td></tr>
+          <tr><td><code>git switch --detach &lt;sha&gt;</code></td><td>przestawia HEAD wprost na commit, z pominięciem gałęzi</td></tr>
+          <tr><td><code>git branch &lt;nazwa&gt;</code></td><td>tworzy ref, nie rusza HEAD</td></tr>
+          <tr><td><code>git branch -d &lt;nazwa&gt;</code></td><td>usuwa ref; commity zostają</td></tr>
+          <tr><td><code>git reset --soft &lt;cel&gt;</code></td><td>przesuwa gałąź, zostawia index i pliki</td></tr>
+          <tr><td><code>git reset &lt;cel&gt;</code></td><td>przesuwa gałąź i czyści index; pliki zostają</td></tr>
+          <tr><td><code>git reset --hard &lt;cel&gt;</code></td><td>przesuwa gałąź, index i pliki — jedyna komenda z tej grupy, która potrafi coś stracić</td></tr>
+          <tr><td><code>git restore &lt;plik&gt;</code></td><td>nie rusza żadnego refa; nadpisuje plik treścią z indeksu</td></tr>
+          <tr><td><code>git restore --staged &lt;plik&gt;</code></td><td>wyjmuje plik z indeksu, nie rusza dysku</td></tr>
+          <tr><td><code>git tag &lt;nazwa&gt;</code></td><td>tworzy ref, który z założenia się nie przesuwa</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Cała grupa jest odwracalna, bo poprzednie wartości refów zapisuje reflog (Rozdział 18).</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa II</div>
+    <h2>Buduje obiekty</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Komenda</th><th>Co robi z grafem</th></tr></thead>
+        <tbody>
+          <tr><td><code>git add &lt;plik&gt;</code></td><td>zapisuje treść pliku jako blob i wpisuje go do indeksu</td></tr>
+          <tr><td><code>git add -p</code></td><td>to samo, ale wybranymi fragmentami</td></tr>
+          <tr><td><code>git commit</code></td><td>buduje drzewo z indeksu i commit wskazujący na HEAD; przesuwa gałąź</td></tr>
+          <tr><td><code>git commit --amend</code></td><td>buduje nowy commit z tym samym rodzicem; stary zostaje bez refa</td></tr>
+          <tr><td><code>git merge &lt;galaz&gt;</code></td><td>przewija ref albo buduje commit z dwojgiem rodziców</td></tr>
+          <tr><td><code>git rebase &lt;baza&gt;</code></td><td>buduje kopie Twoich commitów na nowej podstawie</td></tr>
+          <tr><td><code>git rebase -i &lt;baza&gt;</code></td><td>to samo, według listy poleceń</td></tr>
+          <tr><td><code>git cherry-pick &lt;sha&gt;</code></td><td>buduje kopię wskazanego commita na bieżącym szczycie</td></tr>
+          <tr><td><code>git revert &lt;sha&gt;</code></td><td>buduje commit z odwrotną zmianą; nic nie przepisuje</td></tr>
+          <tr><td><code>git stash</code></td><td>buduje commity poza gałęzią i przywraca czysty katalog</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Wszystko z tej grupy tylko dokłada. Commity „znikają” wyłącznie dlatego, że przestaje na nie wskazywać ref.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa III</div>
+    <h2>Rozmawia z serwerem</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Komenda</th><th>Co robi</th></tr></thead>
+        <tbody>
+          <tr><td><code>git fetch</code></td><td>pobiera obiekty i przestawia refy <code>origin/*</code>; Twoje gałęzie stoją</td></tr>
+          <tr><td><code>git fetch --prune</code></td><td>dodatkowo usuwa refy zdalne, którym nic już nie odpowiada</td></tr>
+          <tr><td><code>git pull</code></td><td>fetch plus scalenie — dwie operacje pod jedną nazwą</td></tr>
+          <tr><td><code>git push</code></td><td>wysyła obiekty i prosi o przesunięcie refa; wymaga fast-forward</td></tr>
+          <tr><td><code>git push -u origin &lt;galaz&gt;</code></td><td>to samo plus zapisanie upstreamu w lokalnej konfiguracji</td></tr>
+          <tr><td><code>git push --force-with-lease</code></td><td>ustawia ref niezależnie od pokrewieństwa, ale tylko jeśli po drugiej stronie jest to, czego się spodziewasz</td></tr>
+          <tr><td><code>git push --delete &lt;galaz&gt;</code></td><td>usuwa ref po stronie serwera</td></tr>
+          <tr><td><code>git clone &lt;url&gt;</code></td><td>tworzy repozytorium, pobiera obiekty i ustawia <code>origin</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Jedyna grupa, w której skutki widzą inni. Stąd cała ostrożność z Rozdziału 17.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa IV, której nie ma</div>
+    <h2>Komendy, które tylko patrzą</h2>
+
+    <p>Osobno warto wymienić te, które <strong>nie zmieniają niczego</strong>. Można je uruchamiać zawsze, także w sytuacji, której się nie rozumie — i właśnie od nich warto zaczynać każdą diagnozę.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Komenda</th><th>Na co odpowiada</th></tr></thead>
+        <tbody>
+          <tr><td><code>git status -sb</code></td><td>gdzie jestem, co mam w indeksie, o ile jestem do przodu i do tyłu</td></tr>
+          <tr><td><code>git log --oneline --graph --all</code></td><td>jak wygląda graf i gdzie są gałęzie</td></tr>
+          <tr><td><code>git log --oneline A..B</code></td><td>co ma B ponad A</td></tr>
+          <tr><td><code>git diff</code> / <code>git diff --staged</code></td><td>katalog kontra index / index kontra HEAD</td></tr>
+          <tr><td><code>git reflog</code></td><td>co robiłem ostatnio i gdzie bywał HEAD</td></tr>
+          <tr><td><code>git show &lt;sha&gt;</code></td><td>co zawiera ten commit</td></tr>
+          <tr><td><code>git cat-file -p &lt;sha&gt;</code></td><td>surowa treść obiektu</td></tr>
+          <tr><td><code>git config --list --show-origin</code></td><td>jakie ustawienia obowiązują i z których plików pochodzą</td></tr>
+          <tr><td><code>git merge-base A B</code></td><td>gdzie te dwie linie się rozeszły</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Dziewięć komend, żadna niczego nie psuje. To jest zestaw, który warto znać na pamięć.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

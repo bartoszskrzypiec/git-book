@@ -28,7 +28,92 @@
   <h1>Dwadzieścia sytuacji i wyjście z każdej</h1>
   <p class="subtitle">Pełne recepty na to, co zdarza się naprawdę: commit na złej gałęzi, detached HEAD, zgubiona praca, rebase w połowie, nadpisany branch.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Jak korzystać</div>
+    <h2>Recepty, nie wyjaśnienia</h2>
+
+    <p>Rozdział 30 jest katalogiem objawów i odsyła dalej. Ten dodatek zawiera pełne przepisy: co wpisać, w jakiej kolejności i czego się spodziewać. Wyjaśnienia są w rozdziałach — tutaj są komendy.</p>
+
+    <p>Dwie zasady obowiązują we wszystkich dwudziestu przypadkach. <strong>Zapisz punkt powrotu</strong> (<code>git rev-parse HEAD</code>) i <strong>sprawdź katalog roboczy</strong> (<code>git status</code>), zanim cokolwiek zrobisz. Pierwsze zamienia każdą naprawę w operację odwracalną, drugie chroni przed jedyną nieodwracalną stratą.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa I</div>
+    <h2>Commit trafił nie tam, gdzie miał</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>#</th><th>Sytuacja i recepta</th></tr></thead>
+        <tbody>
+          <tr><td>1</td><td><strong>Zacommitowałem na złej gałęzi.</strong><br><code>git switch -c wlasciwa</code> — gałąź powstaje tutaj, z commitem.<br><code>git switch zla</code> potem <code>git reset --hard origin/zla</code> — cofa tamtą.</td></tr>
+          <tr><td>2</td><td><strong>Zacommitowałem na gałęzi głównej, nic nie wypchnąłem.</strong><br>Jak wyżej. Nic nie wyjechało, bo push by nie przeszedł (R.22).</td></tr>
+          <tr><td>3</td><td><strong>Commit nie zawiera ostatniej poprawki.</strong><br><code>git add plik</code> potem <code>git commit --amend --no-edit</code>.</td></tr>
+          <tr><td>4</td><td><strong>Chcę podzielić jeden commit na dwa.</strong><br><code>git reset --soft HEAD~1</code>, potem <code>git add -p</code> i dwa osobne commity.</td></tr>
+          <tr><td>5</td><td><strong>Zły plik wjechał do commita.</strong><br><code>git restore --staged --worktree plik</code> po resecie miękkim, albo <code>git rm --cached</code> i amend.</td></tr>
+          <tr><td>6</td><td><strong>Potrzebuję jednego commita z cudzej gałęzi.</strong><br><code>git cherry-pick &lt;sha&gt;</code> — powstaje kopia (R.19).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa II</div>
+    <h2>Push nie przechodzi</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>#</th><th>Sytuacja i recepta</th></tr></thead>
+        <tbody>
+          <tr><td>7</td><td><strong>non-fast-forward, a nikt inny tu nie pracuje.</strong><br><code>git status -sb</code> — jeśli „behind” to Twoje commity sprzed amendu: <code>git push --force-with-lease</code>.</td></tr>
+          <tr><td>8</td><td><strong>non-fast-forward, ktoś dołożył commity.</strong><br><code>git fetch</code>, potem <code>git rebase origin/&lt;galaz&gt;</code>, potem push.</td></tr>
+          <tr><td>9</td><td><strong>stale info przy wymuszonym pushu.</strong><br><code>git fetch</code>, obejrzyj <code>git log HEAD..origin/&lt;galaz&gt;</code>, dopiero potem decyduj (R.17).</td></tr>
+          <tr><td>10</td><td><strong>Hook odrzucił wiadomość ostatniego commita.</strong><br><code>git commit --amend -m "[ABC-1234] Poprawny opis"</code>, potem wymuszony push.</td></tr>
+          <tr><td>11</td><td><strong>Hook odrzucił wiadomość starszego commita.</strong><br><code>git rebase -i origin/master</code>, przy tym commicie zmień <code>pick</code> na <code>reword</code>.</td></tr>
+          <tr><td>12</td><td><strong>Wypchnąłem coś przez pomyłkę na wspólną gałąź.</strong><br><code>git revert &lt;sha&gt;</code> — nigdy reset (R.15).</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa III</div>
+    <h2>Coś zniknęło</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>#</th><th>Sytuacja i recepta</th></tr></thead>
+        <tbody>
+          <tr><td>13</td><td><strong>Nieudany rebase, chcę stan sprzed.</strong><br>W trakcie: <code>git rebase --abort</code>. Po zakończeniu: <code>git reset --hard &lt;galaz&gt;@{1}</code>.</td></tr>
+          <tr><td>14</td><td><strong>reset --hard wyrzucił commity.</strong><br><code>git reflog</code>, znajdź skrót sprzed, <code>git reset --hard &lt;sha&gt;</code>.</td></tr>
+          <tr><td>15</td><td><strong>Usunąłem gałąź.</strong><br><code>git reflog</code> albo skrót z komunikatu o usunięciu, potem <code>git branch nazwa &lt;sha&gt;</code>.</td></tr>
+          <tr><td>16</td><td><strong>Commity zrobione w stanie odczepionym.</strong><br>Jeśli nadal tam jesteś: <code>git switch -c nazwa</code>. Jeśli już nie: <code>git reflog</code> i to samo na skrócie.</td></tr>
+          <tr><td>17</td><td><strong>Reflog nic nie pokazuje.</strong><br><code>git fsck --lost-found</code> — wypis obiektów bez refów, potem <code>git show</code> na każdym.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p class="note">W żadnym z pięciu powyższych przypadków nic nie zostało utracone. Jedyny prawdziwy przypadek straty to zmiana, która nigdy nie stała się commitem — wtedy zostaje <code>git stash list</code> i historia lokalna edytora.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Grupa IV</div>
+    <h2>Stan repozytorium</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>#</th><th>Sytuacja i recepta</th></tr></thead>
+        <tbody>
+          <tr><td>18</td><td><strong>Rebase stanął na konflikcie.</strong><br>Popraw plik, usuń markery, <code>git add plik</code>, <code>git rebase --continue</code>. Wyjście: <code>--abort</code>.</td></tr>
+          <tr><td>19</td><td><strong>Plik dalej widoczny mimo .gitignore.</strong><br><code>git rm --cached plik</code> i commit. Uprzedź zespół — u nich plik zniknie (R.7).</td></tr>
+          <tr><td>20</td><td><strong>Muszę odłożyć pracę na pięć minut.</strong><br><code>git stash push -m "opis"</code>, potem <code>git stash pop</code>. Nowe pliki wymagają <code>-u</code>.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Warto zauważyć, że we wszystkich dwudziestu przypadkach użyto łącznie kilkunastu komend, a najczęściej powtarza się jedna trójka: <code>reflog</code>, <code>reset</code>, <code>switch -c</code>. To nie przypadek — sprowadzają się one do jednej operacji z Rozdziału 4: <strong>przestawienia wskaźnika na właściwy commit</strong>.</p>
+
+    <p>Jeśli sytuacja, w której jesteś, nie pasuje do żadnej z powyższych, wróć do czterech pytań z Rozdziału 30. Odpowiedź na nie zwykle sprowadza nowy przypadek do jednego z tych dwudziestu.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>

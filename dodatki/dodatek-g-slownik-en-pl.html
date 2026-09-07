@@ -28,7 +28,94 @@
   <h1>Słownik EN → PL</h1>
   <p class="subtitle">Dokumentacja gita jest po angielsku, a rozmowy w zespole po polsku. Tu jest mapowanie, razem z terminami, których lepiej nie tłumaczyć.</p>
 
-  <!-- TRESC -->
+  <div class="section">
+    <div class="section-eyebrow">Zasada</div>
+    <h2>Co tłumaczyć, a czego nie</h2>
+
+    <p>Dokumentacja gita jest po angielsku, komunikaty też, a rozmowy w zespole po polsku. Powstaje z tego mieszanka, w której część terminów ma dobre polskie odpowiedniki, a część lepiej zostawić w oryginale.</p>
+
+    <p>Reguła, którą stosuje ta książka: <strong>nazwy komend, refów i przełączników zostają po angielsku i nie odmieniają się</strong> — to nazwy własne. Pojęcia opisowe tłumaczymy, o ile tłumaczenie jest jednoznaczne i naprawdę używane.</p>
+
+    <p>Trzecia grupa to terminy, które lepiej zostawić, choć są rzeczownikami: <em>commit</em>, <em>merge</em>, <em>rebase</em>, <em>push</em>. Polskie odpowiedniki istnieją, ale nikt ich nie używa, a w rozmowie z zespołem zrozumienie jest ważniejsze niż czystość języka.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pojęcia modelu</div>
+    <h2>Obiekty, refy, graf</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Angielski</th><th>Polski</th><th>Uwaga</th></tr></thead>
+        <tbody>
+          <tr><td>working tree / working directory</td><td>katalog roboczy</td><td>pliki widoczne dla edytora</td></tr>
+          <tr><td>index / staging area / cache</td><td>index</td><td>trzy nazwy na jedno; „przechowalnia” bywa myląca</td></tr>
+          <tr><td>snapshot</td><td>migawka</td><td>pełny stan drzewa w commicie</td></tr>
+          <tr><td>blob</td><td>blob</td><td>bez tłumaczenia; „obiekt z treścią pliku”</td></tr>
+          <tr><td>tree</td><td>drzewo</td><td>odpowiednik katalogu</td></tr>
+          <tr><td>ref</td><td>ref</td><td>„wskaźnik” w prozie, „ref” w komendach</td></tr>
+          <tr><td>branch</td><td>gałąź</td><td></td></tr>
+          <tr><td>tag</td><td>tag</td><td>„etykieta” bywa mylona z etykietą MR-a</td></tr>
+          <tr><td>HEAD</td><td>HEAD</td><td>nigdy nie tłumaczyć</td></tr>
+          <tr><td>detached HEAD</td><td>odczepiony HEAD</td><td></td></tr>
+          <tr><td>ancestor / descendant</td><td>przodek / potomek</td><td>kluczowa para (R.5)</td></tr>
+          <tr><td>merge base</td><td>wspólny przodek</td><td></td></tr>
+          <tr><td>diverged</td><td>rozjazd, rozeszły się</td><td>w książce także „rodzeństwo”</td></tr>
+          <tr><td>reachable</td><td>osiągalny</td><td>da się dojść po rodzicach</td></tr>
+          <tr><td>dangling / orphaned</td><td>osierocony</td><td>obiekt bez refa</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Operacje i stany</div>
+    <h2>To, co robisz</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Angielski</th><th>Polski</th><th>Uwaga</th></tr></thead>
+        <tbody>
+          <tr><td>to stage / staged</td><td>dodać do commita / w indeksie</td><td>„zastage'ować” jest w użyciu, ale brzydkie</td></tr>
+          <tr><td>unstaged</td><td>tylko na dysku</td><td></td></tr>
+          <tr><td>untracked</td><td>nieśledzony</td><td></td></tr>
+          <tr><td>to commit</td><td>zacommitować</td><td>odmieniamy, bo weszło do języka</td></tr>
+          <tr><td>amend</td><td>amend</td><td>„poprawić commit” jest mylące — nic się nie poprawia</td></tr>
+          <tr><td>to rebase</td><td>zrobić rebase</td><td>„przebazować” praktycznie nieużywane</td></tr>
+          <tr><td>squash</td><td>squash, zwinąć commity</td><td></td></tr>
+          <tr><td>fast-forward</td><td>przewinięcie do przodu</td><td>w komunikatach zostaje po angielsku</td></tr>
+          <tr><td>force push</td><td>wymuszony push</td><td></td></tr>
+          <tr><td>upstream</td><td>upstream, gałąź zdalna</td><td>„nadrzędna” bywa mylące</td></tr>
+          <tr><td>ahead / behind</td><td>do przodu / do tyłu</td><td></td></tr>
+          <tr><td>to cherry-pick</td><td>zrobić cherry-pick</td><td>zawsze kopia, nigdy przeniesienie</td></tr>
+          <tr><td>stash</td><td>stash, odłożone zmiany</td><td>nie „schowek” — to inna rzecz</td></tr>
+          <tr><td>hunk</td><td>fragment diffa</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Serwer i zespół</div>
+    <h2>Druga strona</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Angielski</th><th>Polski</th><th>Uwaga</th></tr></thead>
+        <tbody>
+          <tr><td>remote</td><td>zdalne repozytorium</td><td><code>origin</code> to tylko jego nazwa</td></tr>
+          <tr><td>bare repository</td><td>repozytorium gołe</td><td>bez katalogu roboczego</td></tr>
+          <tr><td>refspec</td><td>refspec</td><td>zapis <code>zrodlo:cel</code></td></tr>
+          <tr><td>protected branch</td><td>gałąź chroniona</td><td></td></tr>
+          <tr><td>merge request / pull request</td><td>merge request</td><td>ta sama rzecz pod dwiema nazwami</td></tr>
+          <tr><td>approval</td><td>zatwierdzenie</td><td></td></tr>
+          <tr><td>hook</td><td>hook</td><td>„zaczep” praktycznie nieużywane</td></tr>
+          <tr><td>credential helper</td><td>program obsługujący poświadczenia</td><td>w komendach zostaje po angielsku</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Na koniec dwie pułapki językowe warte odnotowania. „Zmergować” i „zmerdżować” funkcjonują w mowie i nikt ich nie kwestionuje, ale w piśmie lepiej wyglądają „scalić” i „scalenie”. Natomiast <strong>„sklonować gałąź”</strong> jest błędem rzeczowym, nie stylistycznym: klonuje się repozytoria, gałęzie się tworzy albo pobiera.</p>
+  </div>
 
   <div class="site-nav">
     <a href="../index.html">← Spis treści</a>
