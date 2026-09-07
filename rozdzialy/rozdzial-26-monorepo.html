@@ -30,7 +30,138 @@
   <h1>Monorepo: Twój kod i cudze zależności w jednym drzewie</h1>
   <p class="subtitle">W jednym repozytorium leży biblioteka i jej konsument. Zmiana bywa spójną parą commitów — a Ty możesz mieć u siebie tylko jedną połowę tej pary.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Monorepo to jedno repozytorium mieszczące wiele modułów: biblioteki i ich konsumentów. Dzięki temu <strong>zmiana i dopasowanie do niej mieszczą się w jednym commicie</strong>.</li>
+      <li>Cena jest taka, że commit dotyczy rzeczy, których nie znasz, a Twoja gałąź niesie stan <em>całego</em> projektu — nie tylko tej części, nad którą pracujesz.</li>
+      <li>Dlatego zakres <code>origin/master..HEAD</code> jest ważniejszy niż liczba plików: mówi, co naprawdę zmieniasz, a nie ile rzeczy dostałeś przy okazji.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dlaczego jedno repozytorium</div>
+    <h2>Atomowa zmiana przez granicę modułu</h2>
+
+    <p>Wyobraź sobie bibliotekę i dziesięć narzędzi, które z niej korzystają, każde w osobnym repozytorium. Zmiana nazwy funkcji w bibliotece staje się wtedy operacją na jedenastu repozytoriach, jedenastu merge requestach i jedenastu terminach scalenia — a między pierwszym a ostatnim istnieje okno, w którym część systemu jest niespójna.</p>
+
+    <p>Monorepo znosi to jednym ruchem. Skoro wszystko leży w jednym drzewie, <strong>zmiana biblioteki i poprawki we wszystkich jej konsumentach mieszczą się w jednym commicie</strong> — atomowym, przetestowanym w całości i niemożliwym do zastosowania w połowie.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>ta sama zmiana</span><span>w dwoch ukladach</span></div>
+      <svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zmiana rozbita na wiele repozytoriów kontra jedna zmiana w monorepo">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="24" font-size="10" fill="#d2685a" letter-spacing="1">OSOBNE REPOZYTORIA</text>
+          <rect x="14" y="36" width="110" height="34" rx="6" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="69" y="57" text-anchor="middle" font-size="9.5" fill="#8b909b">biblioteka</text>
+          <rect x="140" y="36" width="90" height="34" rx="6" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="185" y="57" text-anchor="middle" font-size="9.5" fill="#8b909b">narzedzie A</text>
+          <rect x="246" y="36" width="90" height="34" rx="6" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="291" y="57" text-anchor="middle" font-size="9.5" fill="#8b909b">narzedzie B</text>
+          <text x="356" y="57" font-size="10" fill="#d2685a">trzy commity, trzy terminy,</text>
+          <text x="356" y="73" font-size="10" fill="#d2685a">okno niespojnosci miedzy nimi</text>
+
+          <text x="14" y="130" font-size="10" fill="#4fc3c0" letter-spacing="1">MONOREPO</text>
+          <rect x="14" y="142" width="322" height="46" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="162" font-size="9.5" fill="#8b909b">biblioteka/  narzedzia/A  narzedzia/B</text>
+          <text x="30" y="180" font-size="9.5" fill="#4fc3c0">jeden commit obejmuje wszystkie trzy</text>
+          <text x="356" y="162" font-size="10" fill="#8b909b">nie da sie zastosowac polowy</text>
+          <text x="356" y="178" font-size="10" fill="#8b909b">&#8212; i o to chodzi</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">To jest główny powód, dla którego duże projekty wybierają jedno repozytorium.</div>
+    </div>
+
+    <p>Warto to docenić, zanim przejdziemy do kosztów: dzięki temu układowi każdy pojedynczy commit w gałęzi głównej opisuje <strong>spójny stan całego systemu</strong>. To jest dokładnie ta własność, na której opiera się szukanie regresji przez <code>git bisect</code> — i której w rozproszonych repozytoriach po prostu nie ma.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Koszt · repozytorium jest większe niż Twoja praca</div>
+    <h2>Twoja gałąź niesie cały projekt</h2>
+
+    <p>Gałąź w monorepo zawiera stan wszystkiego, nie tylko Twojego katalogu. To ma kilka praktycznych konsekwencji, z których żadna nie jest oczywista przy pierwszym zetknięciu.</p>
+
+    <ul class="compact">
+      <li><strong>Liczba commitów na gałęzi głównej rośnie szybko</strong>, bo dokładają się do niej wszyscy. Tydzień przerwy to potrafią być setki commitów.</li>
+      <li><strong>Twoja gałąź jest „przestarzała” w wielu wymiarach naraz.</strong> Nie tylko względem swojego katalogu, ale i wszystkich modułów, których używa.</li>
+      <li><strong>Interfejsy pokazują liczby, które nie opisują Twojej pracy.</strong> „108 zmienionych plików” po rebasie mówi o całym projekcie, nie o Tobie.</li>
+    </ul>
+
+    <p>Ostatni punkt jest źródłem regularnej paniki i ma proste rozwiązanie, opisane w Rozdziale 12: <strong>pytaj o zakres, nie o liczbę</strong>. <code>git log --oneline origin/master..HEAD</code> odpowiada wyłącznie o Twoich commitach, niezależnie od tego, ile rzeczy zdarzyło się w projekcie obok.</p>
+
+    <p>Warto to przećwiczyć raz na własnym repozytorium, żeby liczby przestały straszyć. Zakres jest odpowiedzią na pytanie i nie zmienia się od tego, ile commitów dołożył ktoś inny — a to jest dokładnie ta odporność, której brakuje liczbie wyświetlanej w interfejsie.</p>
+
+    <p>Ta sama zasada dotyczy przeglądania zmian. <code>git diff origin/master...HEAD</code> — z trzema kropkami — pokazuje różnicę względem wspólnego przodka, czyli dokładnie to, co wprowadzasz. Dwie kropki pokazałyby dodatkowo wszystko, co w międzyczasie weszło do gałęzi głównej, a to zwykle nie jest pytanie, które chcesz zadać.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Praca w jednym katalogu · i granice tego złudzenia</div>
+    <h2>Nie jesteś sam w tym repozytorium</h2>
+
+    <p>Na co dzień pracujesz w swoim wycinku drzewa i łatwo zapomnieć o reszcie. Warto jednak wiedzieć, gdzie to złudzenie się kończy.</p>
+
+    <p>Po pierwsze, <strong>hooki i reguły dotyczą całego repozytorium</strong>. Format wiadomości commita, limity rozmiaru plików, wymagane zatwierdzenia — wszystko to jest wspólne, choćby Twój moduł miał zupełnie inny charakter niż reszta.</p>
+
+    <p>Po drugie, <strong>ktoś może zmienić kod, którego używasz, nie wiedząc o Twoim istnieniu</strong>. W monorepo jest to nawet łatwiejsze niż gdzie indziej, bo autor zmiany widzi wszystkie miejsca użycia i poprawia je od razu — co jest zaletą, dopóki Twoja gałąź nie jest starsza od tej poprawki.</p>
+
+    <p>Po trzecie, <strong>nie wszystko, co masz w drzewie, jest tym, co uruchamiasz</strong>. Duże projekty zwykle dostarczają część modułów w postaci zbudowanej, niezależnie od tego, co leży w Twoim katalogu roboczym. To jest temat na tyle podstępny, że dostaje osobny rozdział — następny.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Skala · co się zmienia, gdy repozytorium jest duże</div>
+    <h2>Operacje, które przestają być natychmiastowe</h2>
+
+    <p>Wszystko, co ta książka mówiła o tanich operacjach, pozostaje prawdą — ale „tanie” zaczyna zależeć od rozmiaru. W repozytorium z setkami tysięcy plików kilka rzeczy zmienia charakter i warto wiedzieć, które.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>co kosztuje w duzym repozytorium</span><span>i dlaczego</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Operacje tanie i kosztowne w dużym repozytorium">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="286" height="140" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="54" font-size="11" fill="#4fc3c0">tanie zawsze</text>
+          <text x="30" y="80" font-size="10" fill="#8b909b">branch, switch miedzy bliskimi</text>
+          <text x="30" y="100" font-size="10" fill="#8b909b">commit, log na sciezce</text>
+          <text x="30" y="120" font-size="10" fill="#8b909b">czytanie refow</text>
+          <text x="30" y="150" font-size="9.5" fill="#4fc3c0">dotykaja niewielu obiektow</text>
+
+          <rect x="320" y="30" width="286" height="140" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="336" y="54" font-size="11" fill="#e8a33d">potrafi trwac</text>
+          <text x="336" y="80" font-size="10" fill="#8b909b">status na wielkim drzewie</text>
+          <text x="336" y="100" font-size="10" fill="#8b909b">switch miedzy odleglymi stanami</text>
+          <text x="336" y="120" font-size="10" fill="#8b909b">log bez ograniczenia sciezki</text>
+          <text x="336" y="150" font-size="9.5" fill="#e8a33d">musza przejsc cale drzewo</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Podział przebiega tam, gdzie kończy się praca na refach, a zaczyna praca na plikach.</div>
+    </div>
+
+    <p><code>git status</code> jest tu najlepszym przykładem, bo wykonuje się dziesiątki razy dziennie. Musi porównać katalog roboczy z indeksem, czyli w najgorszym razie sprawdzić każdy plik. Git ma na to mechanizmy przyspieszające — pamiętanie stanu plików i współpracę z systemem plików — i w dużym repozytorium warto sprawdzić, czy są włączone.</p>
+
+    <p>Druga rzecz, która potrafi zaskoczyć, to <strong>przełączanie się między odległymi stanami</strong>. Skok o pół roku wstecz oznacza przepisanie dużej części katalogu roboczego, więc trwa. To jeden z powodów, dla których <code>worktree</code> z Rozdziału 19 bywa w takich projektach nie ciekawostką, a codziennym narzędziem.</p>
+
+    <p>Warto też pamiętać, że rozmiar historii i rozmiar katalogu roboczego to dwie różne rzeczy. Repozytorium może mieć niewielkie drzewo i ogromną historię — albo odwrotnie — a każda z tych sytuacji spowalnia co innego.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Jeśli praca z całym drzewem jest niewygodna — długie operacje, powolne wyszukiwanie w edytorze — sprawdź, czy projekt nie udostępnia sposobu na pobranie tylko części katalogów. Git ma do tego mechanizm (<em>sparse checkout</em>), który zostawia w katalogu roboczym wybrane ścieżki, nie ruszając historii ani niczego innego.</p>
+    <p>Przy szukaniu, kto zmienił coś w module, którego nie znasz, przydaje się <code>git log -- sciezka/do/modulu</code>. Ograniczenie do ścieżki działa w każdym poleceniu czytającym historię i w monorepo jest właściwie obowiązkowe, bo bez niego dostajesz historię wszystkiego naraz.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>monorepo</dt><dd>Jedno repozytorium mieszczące wiele modułów albo produktów.</dd>
+      <dt>zmiana atomowa</dt><dd>Zmiana obejmująca wszystkie dotknięte moduły w jednym commicie, niemożliwa do zastosowania w części.</dd>
+      <dt>sparse checkout</dt><dd>Ograniczenie katalogu roboczego do wybranych ścieżek przy zachowaniu pełnej historii.</dd>
+      <dt>ograniczenie do ścieżki</dt><dd>Zapis <code>git log -- sciezka</code>, zawężający wynik do commitów dotykających tej ścieżki.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Zostaje najbardziej podstępna część układanki: to, co uruchamiasz, jest mieszanką Twojego kodu i modułów dostarczonych skądinąd. Następny rozdział pokazuje, jak wygląda błąd na styku tych dwóch światów.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

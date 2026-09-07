@@ -30,7 +30,153 @@
   <h1>Zbudowane lokalnie czy pobrane z release'u</h1>
   <p class="subtitle">Kod, który uruchamiasz, jest mieszanką: część modułów Twoja, część pobrana z centralnego wydania. Błąd na styku wygląda dokładnie jak zepsuty kod, a nie jest nim.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Kod, który uruchamiasz, jest <strong>mieszanką</strong>: część modułów bierze się z Twojego katalogu, część z centralnie budowanego wydania. Moduł po module, niezależnie.</li>
+      <li>Wydanie aktualizuje się z gałęzi głównej i <strong>nie pyta Cię o zdanie</strong>. Twoja gałąź stoi. Na styku tych dwóch prędkości powstaje błąd, który wygląda jak zepsuty kod.</li>
+      <li>Pierwsze pytanie diagnostyczne brzmi więc nie „co jest nie tak z moim kodem”, tylko <strong>„skąd bierze się moduł, w którym to pękło”</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Układ · dwie ścieżki do tego samego importu</div>
+    <h2>Skąd naprawdę bierze się kod</h2>
+
+    <p>W małym projekcie odpowiedź jest oczywista: z katalogu, w którym stoisz. W dużym — nie, i to jest sedno tego rozdziału. Uruchomienie w trybie roboczym oznacza zwykle, że narzędzie składa środowisko z <strong>dwóch źródeł naraz</strong>.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>skad pochodzi modul</span><span>pytanie zadawane osobno dla kazdego</span></div>
+      <svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drzewo decyzyjne: czy moduł jest zbudowany lokalnie, czy pobierany z wydania">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="196" y="20" width="228" height="44" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="310" y="40" text-anchor="middle" font-size="10.5" fill="#e8a33d">import modulu X</text>
+          <text x="310" y="56" text-anchor="middle" font-size="9.5" fill="#8b909b">w kodzie, ktory uruchamiasz</text>
+
+          <path d="M 310 68 L 310 88" stroke="#2a2f38" stroke-width="2"/>
+          <rect x="196" y="90" width="228" height="44" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="310" y="110" text-anchor="middle" font-size="10.5" fill="#4fc3c0">czy masz X zbudowany</text>
+          <text x="310" y="126" text-anchor="middle" font-size="10.5" fill="#4fc3c0">u siebie?</text>
+
+          <path d="M 196 112 L 140 112" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 147 107 L 137 112 L 147 117 Z" fill="#2a2f38"/>
+          <text x="166" y="104" font-size="9.5" fill="#8b909b">tak</text>
+          <rect x="14" y="146" width="230" height="60" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="129" y="168" text-anchor="middle" font-size="10" fill="#e8a33d">Twoja wersja</text>
+          <text x="129" y="186" text-anchor="middle" font-size="9.5" fill="#8b909b">tak stara, jak Twoja galaz</text>
+
+          <path d="M 424 112 L 480 112" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 473 107 L 483 112 L 473 117 Z" fill="#2a2f38"/>
+          <text x="440" y="104" font-size="9.5" fill="#8b909b">nie</text>
+          <rect x="376" y="146" width="230" height="60" rx="8" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="491" y="168" text-anchor="middle" font-size="10" fill="#6e93be">wersja z wydania</text>
+          <text x="491" y="186" text-anchor="middle" font-size="9.5" fill="#8b909b">zawsze aktualna, z galezi glownej</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">To pytanie zadawane jest osobno dla każdego modułu — dlatego wynik jest mieszanką, nie wyborem jednej strony.</div>
+    </div>
+
+    <p>Zwróć uwagę na dwa podpisy pod prostokątami. Po lewej masz kod <strong>tak stary, jak Twoja gałąź</strong>. Po prawej — kod <strong>tak nowy, jak gałąź główna</strong>. Obie strony są w porządku same w sobie; niebezpieczne jest ich zestawienie.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Awaria · połowa spójnej pary</div>
+    <h2>Jak to pęka</h2>
+
+    <p>Wróćmy do pary zmian z Rozdziału 25: ktoś zmienił nazwę klasy w bibliotece i w tym samym commicie poprawił jej użycia. Zobaczmy, co się dzieje w dwóch układach.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Biblioteka</th><th>Konsument</th><th>Wynik</th></tr></thead>
+        <tbody>
+          <tr><td>u Ciebie, stara</td><td>u Ciebie, stary</td><td>działa — spójna para</td></tr>
+          <tr><td>z wydania, nowa</td><td>z wydania, nowy</td><td>działa — spójna para</td></tr>
+          <tr><td>z wydania, nowa</td><td>u Ciebie, stary</td><td><span class="term-przepis">ImportError</span> — masz połowę pary</td></tr>
+          <tr><td>u Ciebie, stara</td><td>z wydania, nowy</td><td><span class="term-przepis">AttributeError</span> — druga połowa</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Dwa pierwsze wiersze to stany, które ktoś testował. Dwa ostatnie nie odpowiadają niczemu.</p>
+
+    <p>Tabela pokazuje jeszcze jedną rzecz, którą łatwo przeoczyć: <strong>oba działające wiersze wymagają, żeby obie połowy pochodziły z tego samego źródła</strong>. Nie ma znaczenia, czy wszystko jest Twoje, czy wszystko z wydania — ważne, żeby nie mieszać. Awarię powoduje dopiero granica przechodząca przez spójną parę zmian.</p>
+
+    <p>Trzeci wiersz jest najczęstszy i wygląda dokładnie tak: masz swój moduł zbudowany lokalnie, więc uruchamiasz jego starą wersję, a biblioteka przychodzi z wydania, więc jest nowa. Import pęka. W komunikacie widnieje nazwa Twojego modułu, więc pierwsze podejrzenie pada na Twój kod — i to jest właśnie ta pułapka.</p>
+
+    <p>Czwarty wiersz jest rzadszy, ale trudniejszy do zdiagnozowania, bo błąd pojawia się w cudzym module. Zdarza się wtedy, gdy pracujesz akurat nad biblioteką, a jej konsumenci przychodzą z wydania i są od Ciebie nowsi.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Diagnoza · dwa pytania w tej kolejności</div>
+    <h2>Zanim zaczniesz czytać własny kod</h2>
+
+    <p>Kiedy w trybie roboczym pęka import albo sygnatura funkcji, warto zadać dwa pytania, zanim otworzy się edytor.</p>
+
+    <p><strong>Pierwsze: czy mój kod ma z tym cokolwiek wspólnego.</strong> Jeżeli błąd dotyczy modułu, którego nie tknąłeś, i nazwy, której nigdy nie widziałeś, to prawdopodobieństwo, że przyczyną jest Twoja zmiana, jest bliskie zeru. Nazwa Twojego pliku w komunikacie nic nie znaczy — to tylko miejsce, w którym coś zostało zaimportowane.</p>
+
+    <p><strong>Drugie: które moduły mam zbudowane lokalnie.</strong> Odpowiedź na to pytanie jest w konkretnym katalogu i sprowadza się do wypisania jego zawartości. To jest ten moment, w którym rysunek z pierwszej sekcji przestaje być teorią: widzisz listę modułów po lewej stronie, a wszystko poza nią przychodzi z prawej.</p>
+
+    <p>Warto zauważyć, że oba pytania da się zadać w dowolnej kolejności i oba są tanie. Pierwsze wymaga wyłącznie przeczytania komunikatu ze zrozumieniem: czy nazwa, na której to pękło, w ogóle występuje w Twojej zmianie. Drugie sprowadza się do wypisania zawartości jednego katalogu. Razem to mniej niż minuta — wobec godzin, które kosztuje szukanie błędu w kodzie, który jest poprawny.</p>
+
+    <p>Mając obie odpowiedzi, naprawa jest zwykle jedną z dwóch: <strong>zaktualizuj gałąź</strong> (rebase z Rozdziału 25, jeśli to Twoja stara połowa pary) albo <strong>zbuduj brakujący moduł lokalnie</strong> (jeśli brakuje Ci połowy, która nie jest u Ciebie w ogóle). Obie są tanie; kosztowne jest tylko szukanie błędu w kodzie, który jest w porządku.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dlaczego to w ogóle tak działa</div>
+    <h2>Kompromis, który ktoś kiedyś świadomie wybrał</h2>
+
+    <p>Układ z poprzednich sekcji wygląda na źródło kłopotów, więc warto powiedzieć, po co istnieje. Alternatywą byłoby budowanie u siebie <em>wszystkiego</em> — całego projektu, za każdym razem.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy mozliwe uklady</span><span>i ich koszt</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy warianty: wszystko lokalnie, wszystko z wydania, mieszanka">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="34" width="186" height="132" rx="10" fill="#1b1e24" stroke="#8b909b"/>
+          <text x="107" y="58" text-anchor="middle" font-size="10.5" fill="#ecebe4">wszystko lokalnie</text>
+          <text x="107" y="86" text-anchor="middle" font-size="9.5" fill="#4fc3c0">pelna spojnosc</text>
+          <text x="107" y="112" text-anchor="middle" font-size="9.5" fill="#d2685a">budowanie liczone</text>
+          <text x="107" y="128" text-anchor="middle" font-size="9.5" fill="#d2685a">w godzinach</text>
+
+          <rect x="217" y="34" width="186" height="132" rx="10" fill="#1b1e24" stroke="#8b909b"/>
+          <text x="310" y="58" text-anchor="middle" font-size="10.5" fill="#ecebe4">wszystko z wydania</text>
+          <text x="310" y="86" text-anchor="middle" font-size="9.5" fill="#4fc3c0">nic nie budujesz</text>
+          <text x="310" y="112" text-anchor="middle" font-size="9.5" fill="#d2685a">nie da sie uruchomic</text>
+          <text x="310" y="128" text-anchor="middle" font-size="9.5" fill="#d2685a">wlasnej zmiany</text>
+
+          <rect x="420" y="34" width="186" height="132" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="513" y="58" text-anchor="middle" font-size="10.5" fill="#e8a33d">mieszanka</text>
+          <text x="513" y="86" text-anchor="middle" font-size="9.5" fill="#4fc3c0">budujesz tylko swoje</text>
+          <text x="513" y="112" text-anchor="middle" font-size="9.5" fill="#e8a33d">mozliwe niedopasowanie</text>
+          <text x="513" y="128" text-anchor="middle" font-size="9.5" fill="#e8a33d">na styku</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Trzeci wariant wybiera się nie dlatego, że jest bezpieczny, tylko dlatego, że dwa pierwsze są nie do przyjęcia.</div>
+    </div>
+
+    <p>Kiedy spojrzeć na to w ten sposób, błędy z tego rozdziału przestają być usterką narzędzi, a stają się <strong>znaną ceną wybranego kompromisu</strong>. To zmienia sposób reagowania: zamiast szukać winnego, sprawdzasz, po której stronie styku jesteś, i dokładasz brakującą połowę.</p>
+
+    <p>Warto też zauważyć, że ta cena jest płacona tylko w trybie roboczym. Kod scalony do gałęzi głównej przechodzi przez budowanie całości, więc niedopasowania z tego rozdziału nie mogą przetrwać scalenia — pojawiają się i znikają wyłącznie w Twoim środowisku roboczym.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Warto raz, na spokojnie, sprawdzić, jak Twój projekt składa środowisko: które moduły są u Ciebie, które przychodzą z wydania, jak często to wydanie się aktualizuje. To wiedza, która oszczędza godziny i której nie da się zdobyć w trakcie awarii.</p>
+    <p>Zanim zgłosisz komuś, że coś jest zepsute, sprawdź to samo na czystej gałęzi głównej. Jeśli tam działa, problem jest w Twojej kombinacji, a nie w projekcie — i wtedy zgłoszenie brzmi zupełnie inaczej.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>wydanie modułu</dt><dd>Wersja budowana centralnie z gałęzi głównej, dostarczana wszystkim automatycznie.</dd>
+      <dt>build lokalny</dt><dd>Wersja modułu zbudowana przez Ciebie, używana zamiast tej z wydania.</dd>
+      <dt>niedopasowanie wersji</dt><dd>Uruchomienie połowy spójnej pary zmian. Objawia się błędem, który wygląda jak błąd w kodzie.</dd>
+      <dt>tryb roboczy</dt><dd>Uruchomienie kodu jeszcze niewydanego — mieszanki Twojego katalogu i bieżącego wydania.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Skoro część rzeczy jest zbudowana lokalnie, warto zapytać, gdzie właściwie leży „lokalnie” — i co się stanie, gdy uruchomisz to samo na innej maszynie. Odpowiedź jest mniej oczywista, niż się wydaje.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>

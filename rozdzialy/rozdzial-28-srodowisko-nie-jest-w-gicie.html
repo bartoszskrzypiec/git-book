@@ -30,7 +30,146 @@
   <h1>Środowisko nie jest w gicie</h1>
   <p class="subtitle">Git przenosi treść plików. Nie przenosi zbudowanych modułów, zmiennych środowiskowych, kluczy ani tego, co masz w PATH — nawet jeśli ścieżka na drugiej maszynie wygląda identycznie.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Git przenosi <strong>treść plików</strong>. Nie przenosi zbudowanych modułów, zmiennych środowiskowych, kluczy, zawartości <code>PATH</code> ani niczego, co powstało poza drzewem.</li>
+      <li>Dlatego „u mnie działa” jest zwykle prawdą, a mimo to bezużyteczną — różnica leży w warstwie, której nie ma w repozytorium.</li>
+      <li>Najbardziej podstępny przypadek: <strong>ta sama ścieżka na dwóch maszynach nie musi znaczyć tego samego katalogu</strong>. Identyczny adres bywa dwoma różnymi systemami plików.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Granica · co jest w repozytorium, a co nie</div>
+    <h2>Dwie warstwy, tylko jedna wersjonowana</h2>
+
+    <p>Repozytorium zawiera dokładnie to, co ktoś do niego dodał. Wszystko inne, choćby było niezbędne do uruchomienia, istnieje wyłącznie na konkretnej maszynie i nie ma żadnego sposobu, żeby pojechało razem z gałęzią.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>co jedzie z repozytorium</span><span>a co zostaje na maszynie</span></div>
+      <svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Podział na rzeczy wersjonowane i rzeczy istniejące tylko lokalnie">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="286" height="160" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="30" y="54" font-size="11" fill="#e8a33d">w repozytorium</text>
+          <text x="30" y="80" font-size="10" fill="#8b909b">kod zrodlowy</text>
+          <text x="30" y="100" font-size="10" fill="#8b909b">konfiguracja projektu</text>
+          <text x="30" y="120" font-size="10" fill="#8b909b">skrypty budujace</text>
+          <text x="30" y="140" font-size="10" fill="#8b909b">definicje zaleznosci</text>
+          <text x="30" y="172" font-size="9.5" fill="#e8a33d">jedzie wszedzie razem z galezia</text>
+
+          <rect x="320" y="30" width="286" height="160" rx="10" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="336" y="54" font-size="11" fill="#6e93be">tylko na tej maszynie</text>
+          <text x="336" y="80" font-size="10" fill="#8b909b">zbudowane moduly</text>
+          <text x="336" y="100" font-size="10" fill="#8b909b">zmienne srodowiskowe i PATH</text>
+          <text x="336" y="120" font-size="10" fill="#8b909b">klucze, tokeny, poswiadczenia</text>
+          <text x="336" y="140" font-size="10" fill="#8b909b">cache, katalogi tymczasowe</text>
+          <text x="336" y="172" font-size="9.5" fill="#6e93be">nie jedzie NIGDZIE, nigdy</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Prawa kolumna to wszystko, czego szukasz, gdy „ten sam kod” zachowuje się inaczej w dwóch miejscach.</div>
+    </div>
+
+    <p>Ten podział wydaje się oczywisty, dopóki nie zetknie się z sytuacją, w której <strong>obie maszyny mają ten sam commit</strong>. Wtedy odruch podpowiada, że skoro kod jest identyczny, to zachowanie też powinno być — a różnica siedzi po prawej stronie rysunku, gdzie git nie ma nic do powiedzenia.</p>
+
+    <p>Najprostszym testem tej granicy jest pytanie: <em>czy po świeżym sklonowaniu repozytorium na czystą maszynę ta rzecz tam będzie</em>. Jeśli nie — jest po prawej stronie rysunku, niezależnie od tego, jak bardzo wydaje się częścią projektu.</p>
+
+    <p>Warto zauważyć, że część rzeczy z prawej kolumny da się przenieść do lewej i zwykle warto to zrobić: definicje zależności, skrypty przygotowujące środowisko, opis wymaganych wersji. To jest właśnie cel narzędzi, które opisują środowisko plikiem w repozytorium — przesuwają granicę w prawo.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pułapka · identyczna ścieżka, inny system plików</div>
+    <h2>Kiedy „to samo miejsce” nie jest tym samym miejscem</h2>
+
+    <p>Najbardziej podstępna wersja tego problemu nie polega na tym, że czegoś brakuje. Polega na tym, że wszystko jest na swoim miejscu — <strong>tylko w innym egzemplarzu</strong>.</p>
+
+    <p>W dużych organizacjach katalogi robocze bywają współdzielone przez sieć i mają identyczną strukturę na wszystkich stacjach. Ta sama ścieżka działa wszędzie, więc łatwo przyjąć, że wszędzie prowadzi do tego samego. Bardzo często prowadzi — ale tylko w obrębie jednej lokalizacji.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>ta sama sciezka</span><span>dwa rozne systemy plikow</span></div>
+      <svg viewBox="0 0 620 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Ta sama ścieżka na dwóch maszynach w różnych lokalizacjach prowadzi do różnych katalogów">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="270" height="120" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="54" font-size="10.5" fill="#4fc3c0">lokalizacja A</text>
+          <text x="30" y="82" font-size="9.5" fill="#8b909b">maszyna 1, maszyna 2</text>
+          <text x="30" y="104" font-size="10" fill="#ecebe4">/wspolne/uzytkownik/moduly</text>
+          <text x="30" y="128" font-size="9.5" fill="#4fc3c0">jeden katalog, wspoldzielony</text>
+
+          <rect x="336" y="30" width="270" height="120" rx="10" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="352" y="54" font-size="10.5" fill="#6e93be">lokalizacja B</text>
+          <text x="352" y="82" font-size="9.5" fill="#8b909b">maszyna 3</text>
+          <text x="352" y="104" font-size="10" fill="#ecebe4">/wspolne/uzytkownik/moduly</text>
+          <text x="352" y="128" font-size="9.5" fill="#d2685a">ta sama nazwa, INNY katalog</text>
+
+          <path d="M 290 90 L 330 90" stroke="#d2685a" stroke-width="2" stroke-dasharray="3 3"/>
+          <text x="310" y="168" text-anchor="middle" font-size="10" fill="#8b909b">nic sie miedzy nimi nie synchronizuje</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ścieżka jest nazwą lokalną. Identyczna nazwa w dwóch sieciach to dwie różne rzeczy.</div>
+    </div>
+
+    <p>Objaw jest wtedy naprawdę mylący: naprawiasz coś na jednej maszynie, sprawdzasz — działa. Uruchamiasz na drugiej — ten sam błąd, co przed naprawą. Odruch podpowiada, że naprawa nie zadziałała, więc szukasz błędu w niej; tymczasem zadziałała doskonale, tylko w innym egzemplarzu katalogu.</p>
+
+    <p>Reguła, którą warto z tego wyciągnąć, jest prosta: <strong>wszystko, co zbudowałeś lokalnie, jest lokalne dla tej lokalizacji</strong>. Automatycznie rozchodzą się tylko rzeczy dystrybuowane centralnie — czyli wydania z poprzedniego rozdziału. Testujesz na maszynie w innej sieci? Zbuduj tam od nowa.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Odróżnianie · kod, gałąź czy maszyna</div>
+    <h2>Trzy warstwy, trzy różne naprawy</h2>
+
+    <p>Zbierzmy razem trzy warstwy, na których może leżeć przyczyna — bo każda wymaga innej reakcji, a wszystkie objawiają się podobnie.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Warstwa</th><th>Sygnał</th><th>Naprawa</th></tr></thead>
+        <tbody>
+          <tr><td>Twój kod</td><td>błąd dotyczy tego, co właśnie zmieniałeś</td><td>zwykłe debugowanie</td></tr>
+          <tr><td>wiek gałęzi</td><td>błąd w module, którego nie tknąłeś</td><td>rebase na aktualną gałąź główną</td></tr>
+          <tr><td>maszyna</td><td>działa gdzie indziej na tym samym commicie</td><td>zbuduj albo skonfiguruj na miejscu</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Kolejność sprawdzania warto mieć odwrotną do intuicji: najpierw dwie dolne, potem pierwsza.</p>
+
+    <p>Warto zwrócić uwagę na środkowy wiersz, bo jest najczęstszy i najmniej oczywisty. Błąd w module, którego nie tknąłeś, prawie nigdy nie jest przypadkiem — jest sygnałem, że Twoja gałąź i reszta projektu rozeszły się na tyle, że przestały do siebie pasować. Komunikat mówi wtedy o cudzym kodzie, ale przyczyna leży po Twojej stronie i naprawia się ją jedną komendą.</p>
+
+    <p>Kolejność z podpisu nie jest przekorą. Dwie dolne warstwy sprawdza się w kilkadziesiąt sekund — rebase i wypisanie zawartości katalogu — a pierwsza potrafi zająć pół dnia. Wykluczenie tanich hipotez przed rozpoczęciem drogiej jest zwykłą ekonomią.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wnioski · co da się z tym zrobić</div>
+    <h2>Przesuwanie granicy w lewo</h2>
+
+    <p>Skoro problemem jest to, że część rzeczy nie jest w repozytorium, naturalną odpowiedzią jest wciągnięcie ich tam — na tyle, na ile się da. Nie wszystko da się przenieść, ale sporo.</p>
+
+    <p><strong>Definicje zamiast wyników.</strong> Zbudowanego modułu nie trzymamy w repozytorium, ale opis tego, jak go zbudować i w jakiej wersji, jak najbardziej. Plik z listą zależności jest właśnie takim przeniesieniem: sam wynik zostaje lokalny, ale przepis jedzie z gałęzią.</p>
+
+    <p><strong>Skrypt zamiast instrukcji w głowie.</strong> Jeżeli przygotowanie środowiska sprowadza się do kilku komend, warto je zapisać w repozytorium. Wtedy „u mnie działa” przestaje być tajemnicą — różnicę widać jako różnicę w wykonanych krokach, a nie jako magię.</p>
+
+    <p><strong>Sprawdzenie zamiast założenia.</strong> Krótki skrypt wypisujący wersje kluczowych elementów środowiska bywa wart więcej niż długa dokumentacja. Uruchamiany na obu maszynach, odpowiada na pytanie „czym się te dwie różnią” w kilka sekund.</p>
+
+    <p>Czego przenieść się nie da: poświadczeń, kluczy i wszystkiego, co jest tajemnicą. To akurat dobrze — plik z hasłem w repozytorium jest gorszym problemem niż każdy opisany w tym rozdziale, bo zostaje w historii na zawsze i w każdym klonie, o czym mówił Rozdział 7.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Kiedy porównujesz zachowanie na dwóch maszynach, zacznij od potwierdzenia, że mają ten sam commit: <code>git rev-parse HEAD</code> po obu stronach. To dwie sekundy, a wyklucza całą klasę nieporozumień, w tym najczęstsze — że na drugiej maszynie gałąź nie została zaktualizowana.</p>
+    <p>Uważaj na porównywanie czasów w logach, gdy maszyny są w różnych strefach czasowych. Wpis wyglądający na starszy potrafi być nowszy, a to prowadzi wprost do fałszywych wniosków o kolejności zdarzeń.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>środowisko</dt><dd>Wszystko, co jest potrzebne do uruchomienia, a nie leży w repozytorium.</dd>
+      <dt>lokalizacja</dt><dd>Zbiór maszyn dzielących infrastrukturę. Katalogi „współdzielone” są zwykle współdzielone w jej obrębie.</dd>
+      <dt>dystrybucja centralna</dt><dd>Mechanizm rozsyłający wydania wszędzie automatycznie. Jedyna rzecz, która rozchodzi się sama.</dd>
+      <dt>„u mnie działa”</dt><dd>Zdanie prawdziwe i bezużyteczne. Informuje wyłącznie o tym, że różnica jest poza repozytorium.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Ostatni rozdział tej części dotyczy rzeczy pozornie błahej, a odpowiadającej za sporo niepotrzebnego stresu: liczby commitów pokazywanej w oknie pusha — i tego, dlaczego bywa całkowicie oderwana od tego, co naprawdę wysyłasz.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>

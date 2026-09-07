@@ -30,7 +30,148 @@
   <h1>Okno push w IDE i liczba commitów, która kłamie</h1>
   <p class="subtitle">Okno pusha porównuje Twoją gałąź z tym, co IDE pamięta o gałęzi zdalnej. Jeśli ta pamięć jest sprzed tygodnia, liczba commitów opisuje przeszłość, nie zawartość.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Liczba commitów w oknie pusha pochodzi z porównania z <strong>lokalną kopią stanu serwera</strong>, a ta bywa sprzed tygodni.</li>
+      <li>Po rebasie na aktualną gałąź główną liczba potrafi skoczyć do kilkudziesięciu, choć Twoja gałąź niesie <strong>jeden własny commit</strong>. To artefakt porównania, nie zawartość.</li>
+      <li>Sprawdzenie zajmuje sekundę: <code>git log --oneline origin/master..HEAD</code> odpowiada na właściwe pytanie, którego okno nie zadaje.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Sytuacja · liczba, która wygląda groźnie</div>
+    <h2>„58 commitów, 108 plików”</h2>
+
+    <p>Scenariusz jest typowy i wygląda tak. Gałąź żyje od dwóch tygodni i ma jeden Twój commit. Przed testowaniem robisz rebase na aktualną gałąź główną — zgodnie z Rozdziałem 25. Otwierasz okno pusha, a tam: kilkadziesiąt commitów i setka plików.</p>
+
+    <p>Pierwsza myśl jest zawsze ta sama: <em>coś poszło nie tak, zaraz wypchnę pół projektu</em>. Warto wiedzieć, że to praktycznie nigdy nie jest prawda — a przyczyna jest zupełnie prozaiczna.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>z czym porownuje okno</span><span>a z czym powinno</span></div>
+      <svg viewBox="0 0 620 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Okno pusha porównuje z nieaktualnym refem zdalnym zamiast z aktualną gałęzią główną">
+        <g font-family="IBM Plex Mono, monospace">
+          <circle cx="60" cy="70" r="14" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <text x="60" y="42" text-anchor="middle" font-size="9" fill="#6e93be">origin/ABC-1234</text>
+          <text x="60" y="102" text-anchor="middle" font-size="9" fill="#8b909b">sprzed dwoch tygodni</text>
+
+          <line x1="86" y1="70" x2="150" y2="70" stroke="#2a2f38" stroke-width="2" stroke-dasharray="3 3"/>
+
+          <circle cx="176" cy="70" r="10" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="226" cy="70" r="10" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="276" cy="70" r="10" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="326" cy="70" r="10" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="376" cy="70" r="10" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <text x="276" y="102" text-anchor="middle" font-size="9" fill="#8b909b">57 commitow cudzych, dociagnietych rebasem</text>
+
+          <circle cx="440" cy="70" r="14" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="440" y="42" text-anchor="middle" font-size="9" fill="#e8a33d">Twoj commit</text>
+
+          <path d="M 86 148 L 414 148" stroke="#d2685a" stroke-width="2"/>
+          <text x="250" y="168" text-anchor="middle" font-size="10" fill="#d2685a">okno liczy STAD &#8212; wychodzi 58</text>
+
+          <path d="M 340 190 L 414 190" stroke="#4fc3c0" stroke-width="2"/>
+          <text x="250" y="206" text-anchor="middle" font-size="10" fill="#4fc3c0">wlasciwe pytanie zaczyna sie tutaj &#8212; wychodzi 1</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Obie liczby są policzone poprawnie. Różnią się pytaniem, na które odpowiadają.</div>
+    </div>
+
+    <p>Warto zauważyć, że dokładnie ta sama sytuacja powstaje bez żadnego rebase'u — wystarczy, że gałąź została odbita dawno temu i nigdy nie wypchnięta. Wtedy pierwszy push pokaże wszystkie commity, które dzielą ją od stanu znanego serwerowi, choć żaden z nich nie jest Twój.</p>
+
+    <p>Okno porównuje Twoją gałąź z <strong>gałęzią zdalną o tej samej nazwie</strong>, czyli z tym, co ostatnio wypchnąłeś — dwa tygodnie temu. Od tamtej pory doszło pięćdziesiąt siedem cudzych commitów, które właśnie wciągnąłeś rebasem, plus Twój jeden. Pięćdziesiąt osiem. Liczba jest prawidłowa; pytanie jest nie to.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Właściwe pytanie · względem czego</div>
+    <h2>Zakres zamiast liczby</h2>
+
+    <p>Interesuje Cię nie „ile commitów przybyło od ostatniego pusha”, tylko <strong>„co wnoszę ponad gałąź docelową”</strong>. To dwa różne zakresy i git odpowiada na oba, jeśli tylko o właściwy zapytasz.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>dwa zakresy, dwie odpowiedzi</span><span>po rebasie</span></div>
+<pre><span class="cmd">git log --oneline origin/ABC-1234..HEAD | wc -l</span>
+58     <span class="komentarz">&#8592; to liczy okno pusha</span>
+
+<span class="cmd">git log --oneline origin/master..HEAD</span>
+886fe82 [ABC-1234] Dodaj wyszukiwarke
+       <span class="komentarz">&#8592; to jest Twoja praca: jeden commit</span></pre>
+    </div>
+    <p class="konsola-opis">Ta sama gałąź, dwa punkty odniesienia. Drugi jest tym, o który chodzi w merge requeście.</p>
+
+    <p>Warto zapamiętać tę parę raz na zawsze, bo wraca przy każdym rebasie. <code>origin/&lt;twoja-galaz&gt;..HEAD</code> mówi, co się zmieniło od ostatniego pusha — czyli ile rzeczy wyjedzie na serwer. <code>origin/master..HEAD</code> mówi, co wnosisz do projektu — czyli co zobaczy recenzent.</p>
+
+    <p>Skrót, który warto zapamiętać, brzmi: <strong>pytaj zawsze względem gałęzi docelowej</strong>. To jedyny punkt odniesienia, który nie zmienia się od tego, kiedy ostatnio pushowałeś, ile razy robiłeś rebase i jak długo gałąź żyje. Wszystkie inne liczby mówią coś o historii Twojej pracy, a nie o jej zawartości.</p>
+
+    <p>Ta druga liczba jest zresztą tą, którą pokaże merge request. Dlatego okno pusha może straszyć pięćdziesięcioma ośmioma commitami, a MR otwarty pięć minut później pokaże jeden — i obie liczby będą prawdziwe.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Kiedy naprawdę warto się zaniepokoić</div>
+    <h2>Trzy sygnały, które nie są artefaktem</h2>
+
+    <p>Nie każde zaskoczenie w oknie pusha jest fałszywym alarmem. Warto znać trzy przypadki, w których liczba mówi coś istotnego.</p>
+
+    <ul class="compact">
+      <li><strong>Push wymuszony, którego się nie spodziewałeś.</strong> Jeśli narzędzie proponuje wymuszenie, a Ty nie przepisywałeś historii — sprawdź, czy ktoś inny nie pracuje na tej gałęzi.</li>
+      <li><strong>Commity z cudzymi nazwiskami w zakresie <code>origin/master..HEAD</code>.</strong> To oznacza, że wciągnąłeś do swojej gałęzi coś, czego jeszcze nie ma w gałęzi głównej — na przykład odbiłeś się od cudzej gałęzi.</li>
+      <li><strong>Pliki, których nie tknąłeś, w podglądzie zmian merge requesta.</strong> Tu porównanie jest już względem właściwej podstawy, więc obce pliki naprawdę oznaczają, że coś dostało się do gałęzi przy okazji.</li>
+    </ul>
+
+    <p>We wszystkich trzech przypadkach reakcja jest ta sama i sprowadza się do jednej komendy z Rozdziału 12: obejrzyj zakres. <code>git log --oneline --graph origin/master..HEAD</code> pokazuje jednocześnie liczbę, autorów i kształt — a to wystarcza, żeby rozstrzygnąć, czy to artefakt, czy realny problem.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Ogólniej · interfejs pokazuje odpowiedź, nie pytanie</div>
+    <h2>Skąd biorą się mylące liczby</h2>
+
+    <p>Ten sam mechanizm stoi za większością zaskakujących liczb w narzędziach graficznych, nie tylko za oknem pusha. Warto znać go w postaci ogólnej, bo wtedy każdy kolejny przypadek rozpoznaje się od razu.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy pytania</span><span>trzy rozne liczby</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy różne pytania o tę samą gałąź dają trzy różne liczby">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="590" height="42" rx="8" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="30" y="48" font-size="10" fill="#6e93be">ile commitow od ostatniego pusha?</text>
+          <text x="30" y="64" font-size="9.5" fill="#8b909b">origin/moja-galaz..HEAD &#8212; to liczy okno pusha</text>
+
+          <rect x="14" y="82" width="590" height="42" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="30" y="100" font-size="10" fill="#e8a33d">co wnosze do projektu?</text>
+          <text x="30" y="116" font-size="9.5" fill="#8b909b">origin/master..HEAD &#8212; to pokaze merge request</text>
+
+          <rect x="14" y="134" width="590" height="42" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="152" font-size="10" fill="#4fc3c0">ile mam wszystkiego na galezi?</text>
+          <text x="30" y="168" font-size="9.5" fill="#8b909b">git log HEAD &#8212; liczba bez zadnego znaczenia praktycznego</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Trzy poprawne odpowiedzi na trzy różne pytania. Interfejs pokazuje jedną i nie mówi którą.</div>
+    </div>
+
+    <p>Interfejsy graficzne muszą wybrać jedno pytanie i zwykle wybierają to, które jest tanie do policzenia i sensowne w najczęstszym przypadku. Problem polega na tym, że <strong>nie piszą, które wybrały</strong> — a liczba bez podanego punktu odniesienia jest w gruncie rzeczy bez znaczenia.</p>
+
+    <p>Stąd ogólna reguła, przydatna daleko poza tym rozdziałem: kiedy liczba w narzędziu Cię zaskakuje, nie zaczynaj od podważania jej poprawności. Zapytaj, <strong>względem czego została policzona</strong> — i policz sam to, o co naprawdę Ci chodzi.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Zanim naciśniesz push po rebasie, warto wyrobić sobie odruch dwóch sekund: spójrz, czy w zakresie względem gałęzi głównej jest tyle commitów, ile się spodziewasz. To ten sam nawyk co czytanie <code>git status</code> przed commitem — tania kontrola tuż przed operacją, której skutki widzą inni.</p>
+    <p>Jeśli interfejs, którego używasz, nie pokazuje zakresu względem gałęzi docelowej, nie jest to powód, żeby go porzucać. Wystarczy trzymać jedno okno terminala obok i wpisywać tam jedną komendę — te same dane, tylko zadane właściwym pytaniem.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>punkt odniesienia</dt><dd>Commit, względem którego liczona jest różnica. Bez niego liczba commitów nic nie znaczy.</dd>
+      <dt>artefakt porównania</dt><dd>Liczba policzona poprawnie, ale względem nie tego punktu, o który Ci chodzi.</dd>
+      <dt>zakres wnoszony</dt><dd><code>origin/master..HEAD</code> — commity, które wprowadzasz do projektu.</dd>
+      <dt>zakres do wypchnięcia</dt><dd><code>origin/&lt;galaz&gt;..HEAD</code> — commity, które wyjadą przy tym pushu.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>To koniec części poświęconej dużym projektom. Zostaje ostatni rozdział — katalog objawów, do którego wraca się wtedy, gdy nie ma czasu na czytanie żadnego z poprzednich.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>
