@@ -13,9 +13,9 @@ miedzy zadaniami, a nie ciagiem, i kazdy rozdzial ma odpowiadac na jedno
 pytanie. Nadmiar nie ginie: krotkie rozwiniecia ida do modali na tej samej
 stronie, duze tematy do dodatkow z mapy "ext" w spis.json.
 
-Wizualizacja to <svg> albo widget .gitviz. Widget niesie w zrodle wlasny
-pusty <svg> (wypelnia go gitgraph.js), wiec liczylby sie dwa razy - stad
-odejmowanie ponizej zamiast prostego dodawania.
+Wizualizacja to <svg> albo widget .gitviz. Widget NIE ma <svg> w zrodle
+strony - gitgraph.js wstawia go dopiero przy starcie, w miejsce bloku
+zastepczego - wiec licza sie osobno i nic sie nie dubluje.
 """
 import io, os, re, sys
 
@@ -31,8 +31,7 @@ def zlicz(path):
         tekst = re.sub(r'<(script|style|svg)\b.*?</\1>', ' ', m.group(1), flags=re.S)
         tekst = re.sub(r'<[^>]+>', ' ', tekst)
         slowa += len(re.findall(r'[0-9A-Za-zĄąĆćĘęŁłŃńÓóŚśŹźŻż]+', tekst))
-    # Kazdy .gitviz zawiera dokladnie jeden <svg> w swoim .gitviz__stage.
-    wiz = html.count('<svg')
+    wiz = html.count('<svg') + html.count('class="gitviz"')
     return slowa, wiz
 
 

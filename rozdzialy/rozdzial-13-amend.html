@@ -30,7 +30,182 @@
   <h1>amend: dlaczego poprawka literówki buduje nowy commit</h1>
   <p class="subtitle">Wiadomość commita nie jest polem, które da się poprawić — jest częścią commita. Dlatego „popraw opis” zawsze oznacza zbudowanie commita od nowa.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Wiadomość commita nie jest polem w bazie danych, które dałoby się poprawić. Jest <strong>częścią commita</strong>, a adres commita liczy się z jego treści — więc inna wiadomość to z definicji inny commit.</li>
+      <li><code>--amend</code> nie edytuje niczego. Buduje <span class="term-obiekt">nowy obiekt</span> z tym samym rodzicem co poprzedni i przestawia na niego <span class="term-ref">karteczkę gałęzi</span>. Stary commit zostaje na dysku, tylko przestaje być wskazywany.</li>
+      <li>Jeśli poprawiona gałąź była już wypchnięta, zwykły push zostanie odrzucony — i słusznie, bo Twój nowy commit nie jest potomkiem tego z serwera, tylko jego <strong>rodzeństwem</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Punkt wyjścia · literówka, której nie widać</div>
+    <h2>Trzy znaki, które nie dojechały ze schowka</h2>
+
+    <p>Wklejasz przygotowaną wiadomość commita do okna w IDE, klikasz, idziesz dalej. Dopiero po chwili orientujesz się, że w historii jest <code>odaj wyszukiwarke</code> zamiast <code>[ABC-1234] Dodaj wyszukiwarke</code>. Prefiks i pierwsza litera zostały w schowku.</p>
+
+    <p>To wygląda na najdrobniejszą możliwą usterkę: trzy znaki w opisie, kod bez zmian, testy przechodzą. Pierwszy odruch — dopisać drugi commit z poprawką albo „wejść i poprawić opis”. Żadne z tych dwóch nie działa, i to nie dlatego, że git jest niewygodny, tylko dlatego, że nie ma czegoś takiego jak edycja commita.</p>
+
+    <p>Poniższy widget przechodzi całą tę sytuację krok po kroku. Na górze Twój dysk, pod kreską origin — patrz, w którym momencie panele przestają się zgadzać.</p>
+
+    <div class="gitviz" data-git-scenario="amend">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Amend na wypchniętej gałęzi</p>
+        <p class="gitviz__sub">Trzy kroki: poprawka opisu, odrzucony push, push wymuszony.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — wszystko, co widget pokazuje, jest też opisane w tekście obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="amend">git commit --amend</button>
+        <button data-git-op="commit">git commit</button>
+        <button data-git-op="push">git push</button>
+        <button data-git-op="pushForce">git push --force-with-lease</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Zwróć uwagę na SHA po amendzie: stary węzeł nie znika, tylko blednie. Nadal jest na dysku.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Mechanizm · adres wynika z treści</div>
+    <h2>Dlaczego opisu nie da się podmienić w miejscu</h2>
+
+    <p>Zajrzyj do commita tym, czym git go widzi. <code>git cat-file -p</code> wypisuje surową treść obiektu:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git cat-file -p HEAD</span><span>surowa treść obiektu</span></div>
+<pre><span class="cmd">git cat-file -p HEAD</span>
+tree d09fcdce979ee552ec3fcb677a2cd0361f846902
+parent f0bae61e149afb77a3b0413aed840734e313783f
+author Ty &lt;ty@example.com&gt; 1788807845 +0200
+committer Ty &lt;ty@example.com&gt; 1788807846 +0200
+
+[ABC-1234] Dodaj wyszukiwarke</pre>
+    </div>
+    <p class="konsola-opis">To jest cały commit. Pięć linii i wiadomość — nic więcej w nim nie ma.</p>
+
+    <p>Wiadomość leży w tym samym obiekcie co wskaźnik na drzewo plików i wskaźnik na rodzica. A <span class="term-obiekt">SHA commita</span> to skrót policzony z tego całego tekstu. Zmiana jednego znaku w ostatniej linii zmienia skrót tak samo, jak zmiana zawartości pliku — bo dla funkcji skrótu to jest po prostu inne wejście.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>commit.hash</span><span>co wchodzi do adresu</span></div>
+      <svg viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cztery pola commita wchodzą do funkcji skrótu, która daje SHA">
+        <text x="16" y="22" font-family="IBM Plex Mono, monospace" font-size="10.5" fill="#8b909b" letter-spacing="1">TRESC COMMITA</text>
+        <g font-family="IBM Plex Mono, monospace" font-size="12">
+          <rect x="16" y="36" width="240" height="34" rx="6" fill="#20242c" stroke="#2a2f38"/>
+          <text x="30" y="57" fill="#ecebe4">tree</text><text x="90" y="57" fill="#8b909b">d09fcdc…</text>
+          <rect x="16" y="78" width="240" height="34" rx="6" fill="#20242c" stroke="#2a2f38"/>
+          <text x="30" y="99" fill="#ecebe4">parent</text><text x="90" y="99" fill="#8b909b">f0bae61…</text>
+          <rect x="16" y="120" width="240" height="34" rx="6" fill="#20242c" stroke="#2a2f38"/>
+          <text x="30" y="141" fill="#ecebe4">author</text><text x="90" y="141" fill="#8b909b">Ty, data</text>
+          <rect x="16" y="162" width="240" height="34" rx="6" fill="#20242c" stroke="#e8a33d"/>
+          <text x="30" y="183" fill="#e8a33d">message</text><text x="110" y="183" fill="#e8a33d">[ABC-1234]…</text>
+        </g>
+        <path d="M 264 116 L 330 116" stroke="#2a2f38" stroke-width="2"/>
+        <path d="M 322 111 L 332 116 L 322 121 Z" fill="#2a2f38"/>
+        <rect x="336" y="94" width="120" height="44" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+        <text x="396" y="121" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="12" fill="#4fc3c0">SHA-1</text>
+        <path d="M 462 116 L 520 116" stroke="#2a2f38" stroke-width="2"/>
+        <path d="M 512 111 L 522 116 L 512 121 Z" fill="#2a2f38"/>
+        <circle cx="562" cy="116" r="34" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+        <text x="562" y="120" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="11" fill="#e8a33d">407463b</text>
+        <text x="16" y="228" font-family="IBM Plex Mono, monospace" font-size="11" fill="#8b909b">zmien cokolwiek po lewej — po prawej wychodzi inny adres, czyli inny commit</text>
+      </svg>
+      <div class="diagram-caption">Wiadomość jest jednym z czterech wejść skrótu. Nie ma sposobu, żeby ją wymienić i zachować adres.</div>
+    </div>
+
+    <p>Stąd wniosek, który warto zapamiętać raz na zawsze: <strong>w gicie nie istnieje operacja „edytuj commit”.</strong> Wszystko, co brzmi jak edycja — <code>--amend</code>, <code>rebase</code>, <code>squash</code> — sprowadza się do jednego i tego samego: zbuduj nowe obiekty i przestaw wskaźnik gałęzi.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Skutek uboczny · commit, który stracił karteczkę</div>
+    <h2>Stary commit nie zniknął</h2>
+
+    <p>Po amendzie <code>git log</code> pokazuje jeden commit i wygląda to na podmianę. W rzeczywistości na dysku leżą dwa obiekty, a jeden z nich przestał być przez cokolwiek wskazywany. Git ma na to nazwę i potrafi go pokazać:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git reflog</span><span>ruchy HEAD, nie historia gałęzi</span></div>
+<pre><span class="cmd">git reflog -3</span>
+<span class="sha">407463b</span> HEAD@{0}: commit (amend): [ABC-1234] Dodaj wyszukiwarke
+<span class="sha">7fbdb3e</span> HEAD@{1}: commit: odaj wyszukiwarke
+<span class="sha">f0bae61</span> HEAD@{2}: checkout: moving from master to ABC-1234_wyszukiwarka
+
+<span class="cmd">git fsck --lost-found</span>
+dangling commit 7fbdb3e42b459418a4f6c25ef75e83b7c342bf5b</pre>
+    </div>
+    <p class="konsola-opis">„dangling” znaczy dokładnie tyle: obiekt istnieje, ale nie prowadzi do niego żaden ref.</p>
+
+    <p>To jest powód, dla którego nieudany amend nie jest katastrofą. Dopóki stary skrót widnieje w <span class="term-ref">reflogu</span> — domyślnie około trzydziestu dni — wystarczy <code>git reset --hard 7fbdb3e</code>, żeby wrócić do stanu sprzed poprawki. Reflog dostaje osobny rozdział; tutaj wystarczy wiedzieć, że siatka istnieje.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konsekwencja · push przestaje przechodzić</div>
+    <h2>Rodzeństwo, nie następca</h2>
+
+    <p>Zwykły <code>push</code> przyjmuje aktualizację tylko wtedy, gdy commit, który wysyłasz, jest <strong>potomkiem</strong> tego, który leży na serwerze. Wtedy nic nie ginie: ref przesuwa się do przodu po istniejącym łańcuchu. Po amendzie ten warunek jest złamany — nowy i stary commit mają tego samego rodzica i żaden nie pochodzi od drugiego.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git push</span><span>gałąź wypchnięta przed amendem</span></div>
+<pre><span class="cmd">git rev-list --left-right --count HEAD...@{upstream}</span>
+1       1
+
+<span class="cmd">git push</span>
+To ../origin.git
+<span class="err"> ! [rejected]        ABC-1234_wyszukiwarka -&gt; ABC-1234_wyszukiwarka (non-fast-forward)</span>
+<span class="err">error: failed to push some refs to '../origin.git'</span>
+hint: Updates were rejected because the tip of your current branch is behind
+hint: its remote counterpart. If you want to integrate the remote changes,
+hint: use 'git pull' before pushing again.</pre>
+    </div>
+    <p class="konsola-opis">Pierwsza komenda mówi wszystko: jeden commit u mnie, jeden na serwerze, wspólny rodzic. Gałęzie się rozjechały.</p>
+
+    <p>Podpowiedź gita jest tu myląca, bo dotyczy najczęstszej przyczyny, a nie Twojej. <code>git pull</code> byłby tu najgorszym z możliwych ruchów: ściągnąłby z powrotem commit z literówką i scalił go z poprawionym, więc w historii wylądowałyby oba. Właściwą odpowiedzią jest <code>git push --force-with-lease</code> — powiedzenie serwerowi, żeby ustawił ref na Twój skrót:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git push --force-with-lease</span><span>wynik</span></div>
+<pre><span class="cmd">git push --force-with-lease</span>
+<span class="ok"> + 7fbdb3e...407463b ABC-1234_wyszukiwarka -&gt; ABC-1234_wyszukiwarka (forced update)</span></pre>
+    </div>
+
+    <p>Trzy kropki między skrótami zamiast dwóch to nie ozdoba: git sygnalizuje w ten sposób, że aktualizacja <span class="term-przepis">nie była przewinięciem do przodu</span>. Wariant <code>--force-with-lease</code> różni się od gołego <code>--force</code> tym, że najpierw sprawdza, czy na serwerze leży to, czego się spodziewasz — jeśli w międzyczasie ktoś tam coś dołożył, odmówi zamiast nadpisać cudzą pracę.</p>
+
+    <div class="uwaga">
+      <div class="panel-label">Kiedy tego nie robić</div>
+      <p>Amend i wymuszony push są bezpieczne na <strong>Twojej</strong> gałęzi funkcyjnej, której nikt jeszcze nie recenzuje i na której nikt nie oparł swojej pracy. Nie robi się tego na gałęziach chronionych, ani po otwarciu merge requesta — komentarze recenzenta są przypięte do konkretnych skrótów i po przepisaniu historii tracą kotwicę.</p>
+    </div>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Amend potrafi przy okazji zrobić dwie rzeczy naraz: podmienić wiadomość i wciągnąć do tego samego commita poprawki, które właśnie dodałeś do indeksu. Jeśli po zbudowaniu commita zauważysz jednocześnie literówkę w opisie i drobny błąd w kodzie, popraw jedno i drugie, zrób <code>git add</code>, a potem jeden <code>--amend</code>. W historii zostanie jeden czysty commit, bez śladu w stylu „fix typo”.</p>
+    <p>Zanim wymusisz push, upewnij się, że poprawiasz to, co myślisz: <code>git log -1 --pretty=%s</code> wypisze samą wiadomość ostatniego commita. To dwie sekundy, a chroni przed wymuszeniem pusha stanu, którego nie sprawdziłeś.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>amend</dt><dd>Zbudowanie nowego commita w miejsce ostatniego, z tym samym rodzicem, i przestawienie na niego gałęzi. Nie jest edycją.</dd>
+      <dt>dangling commit</dt><dd>Obiekt, do którego nie prowadzi już żaden ref. Nadal jest na dysku i nadal da się do niego wrócić.</dd>
+      <dt>non-fast-forward</dt><dd>Odmowa serwera wynikająca z tego, że wysyłany commit nie jest potomkiem tego, który tam leży.</dd>
+      <dt>--force-with-lease</dt><dd>Wymuszony push z warunkiem: przejdzie tylko wtedy, gdy zdalny ref jest dokładnie tam, gdzie się go spodziewasz.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Amend jest najprostszym przypadkiem przepisywania historii — dotyczy jednego commita. Następny rozdział pokazuje tę samą mechanikę zastosowaną do całego ciągu commitów naraz, czyli interaktywny rebase: tam też nic nie jest edytowane, tylko budowane od nowa według listy poleceń.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>
@@ -46,5 +221,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>
