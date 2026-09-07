@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Git dla Artystów Technicznych</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/style.css">
+<link rel="stylesheet" href="assets/widgets.css">
+<link rel="stylesheet" href="assets/gitviz.css">
+<style>.page{max-width:920px;}</style>
+</head>
+<body>
+<nav class="topnav">
+  <a class="topnav__brand" href="index.html">Git <span>dla Artystów Technicznych</span></a>
+  <div class="topnav__links">
+  <a href="rozdzialy/rozdzial-01-trzy-drzewa.html">Zacznij od Rozdziału 1 →</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <div class="viewport-readout">
+    <span>Rozdziałów · 30</span><span>Dodatków · 9</span><span>Rozdział · 700–1200 słów</span><span>Wymaga · przeglądarki</span>
+  </div>
+
+  <div class="eyebrow">Spis treści</div>
+  <h1>Git dla Artystów Technicznych</h1>
+  <p class="subtitle">Model, nie zaklęcia. Dlaczego git robi to, co robi — i co zrobić, gdy zrobił to Tobie.</p>
+
+  <div class="panel">
+    <div class="panel-label">Jak czytać tę książkę</div>
+    <ul>
+      <li><strong>Część I czyta się po kolei i w całości.</strong> To pięć krótkich rozdziałów, po których reszta książki przestaje być listą przepisów. Bez nich każdy kolejny rozdział trzeba zapamiętać; z nimi da się go wyprowadzić.</li>
+      <li><strong>Reszta jest do czytania wyrywkowo.</strong> Masz odrzucony push — idź do Rozdziału 16. Nie wiesz, czy wolno Ci wymusić — Rozdział 17. Coś zniknęło — Rozdział 18.</li>
+      <li><strong>Rozdział 30 to katalog objawów.</strong> Komunikat, przyczyna, komenda. To do niego wraca się najczęściej i to od niego warto zacząć w chwili paniki.</li>
+    </ul>
+  </div>
+
+  <div class="part">
+    <div class="part-label amber">Część I · Model (R.1–5)</div>
+    <p class="part-intro">Pięć rozdziałów fundamentu. Bez nich reszta książki jest listą przepisów — z nimi każdy komunikat gita da się wyprowadzić z zasad.</p>
+    <div class="index-list">
+      <a class="index-row" href="rozdzialy/rozdzial-01-trzy-drzewa.html">
+        <span class="index-num">Rozdział 1 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Trzy drzewa: katalog roboczy, index, HEAD</span>
+        <span class="index-hook">Git nie ma dwóch stanów („zapisane” i „niezapisane”), tylko trzy. Prawie każde zaskoczenie w codziennej pracy bierze się z pomylenia dwóch z nich.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-02-commit-jest-obiektem.html">
+        <span class="index-num">Rozdział 2 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Commit jest obiektem, nie zmianą</span>
+        <span class="index-hook">Commit nie przechowuje tego, co się zmieniło. Przechowuje pełny stan drzewa plików. Diff jest liczony na żądanie — i stąd bierze się połowa zachowań, które wyglądają na magię.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-03-sha-jest-adresem.html">
+        <span class="index-num">Rozdział 3 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">SHA jest adresem treści</span>
+        <span class="index-hook">Skrót commita nie jest nadanym mu numerem. Jest wyliczony z jego zawartości — więc zmiana jednego znaku w opisie daje inny commit, a nie ten sam commit z poprawką.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-04-galaz-to-karteczka.html">
+        <span class="index-num">Rozdział 4 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Gałąź to karteczka z adresem</span>
+        <span class="index-hook">Gałąź nie zawiera commitów. Jest plikiem z jednym SHA w środku. HEAD jest karteczką wskazującą na karteczkę — i to wystarcza, żeby wyjaśnić „detached HEAD”.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-05-graf-rodzic-i-rodzenstwo.html">
+        <span class="index-num">Rozdział 5 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Graf: rodzic, potomek, rodzeństwo</span>
+        <span class="index-hook">Historia w gicie nie jest listą, tylko grafem skierowanym. Kilka słów o pokrewieństwie commitów wyjaśnia z góry, dlaczego jeden push przechodzi, a drugi zostaje odrzucony.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-label">Część II · Codzienna praca (R.6–12)</div>
+    <p class="part-intro">Cykl, który powtarzasz kilkanaście razy dziennie, opisany przez to, co robi z grafem — a nie przez kolejność klikania.</p>
+    <div class="index-list">
+      <a class="index-row" href="rozdzialy/rozdzial-06-status-add-commit.html">
+        <span class="index-num">Rozdział 6 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">status, add, commit — i co naprawdę robi add</span>
+        <span class="index-hook">„Dodaj plik do commita” to złe tłumaczenie. add kopiuje bieżącą treść pliku do indeksu — a to, co zrobisz z plikiem potem, już tam nie trafi.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-07-gitignore-i-sledzenie.html">
+        <span class="index-num">Rozdział 7 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">.gitignore, śledzenie i wyjmowanie plików</span>
+        <span class="index-hook">.gitignore nie działa wstecz. Plik raz zacommitowany jest śledzony niezależnie od wzorców — i to jest najczęstsze „dlaczego to dalej widać”.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-08-galaz-funkcyjna-i-upstream.html">
+        <span class="index-num">Rozdział 8 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Gałąź funkcyjna od zera i co znaczy „śledzi”</span>
+        <span class="index-hook">Upstream to nie ustawienie serwera, tylko dwie linijki w lokalnym pliku konfiguracyjnym. Dopiero one sprawiają, że samo git push wie, dokąd.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-09-fetch-nie-jest-pullem.html">
+        <span class="index-num">Rozdział 9 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">fetch nie jest pullem, a origin/master jest lokalny</span>
+        <span class="index-hook">origin/master nie jest oknem na serwer. To lokalny ref, aktualizowany wyłącznie wtedy, gdy sam o to poprosisz — dlatego bywa nieaktualny i dlatego liczby w IDE potrafią kłamać.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-10-merge-czy-rebase.html">
+        <span class="index-num">Rozdział 10 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Merge czy rebase — jedno pytanie, nie religia</span>
+        <span class="index-hook">Obie komendy odpowiadają na to samo pytanie: co zrobić, gdy Twoja praca i cudza praca wyszły z tego samego punktu. Różnią się tym, czy zapisujesz fakt spotkania, czy udajesz, że go nie było.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-11-konflikt.html">
+        <span class="index-num">Rozdział 11 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Konflikt: co git pokazuje i jak to czytać</span>
+        <span class="index-hook">Konflikt nie jest awarią. Jest miejscem, w którym git odmawia zgadywania — a znaczniki w pliku mówią dokładnie, czyja wersja jest która.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-12-czytanie-historii.html">
+        <span class="index-num">Rozdział 12 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Czytanie historii: log, graph i operator dwóch kropek</span>
+        <span class="index-hook">Jedna składnia — A..B — odpowiada na pytanie „co dokładnie wypycham”. Bez niej zostaje liczba commitów w oknie IDE, która odpowiada na zupełnie inne pytanie.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-label violet">Część III · Zmiana zdania (R.13–19)</div>
+    <p class="part-intro">Wszystko, co brzmi jak „edycja historii”. Najbardziej stresująca część gita, bo tu zaczyna się pytanie „czy właśnie coś straciłem”. Odpowiedź prawie zawsze brzmi: nie.</p>
+    <div class="index-list">
+      <a class="index-row" href="rozdzialy/rozdzial-13-amend.html">
+        <span class="index-num">Rozdział 13 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">amend: dlaczego poprawka literówki buduje nowy commit</span>
+        <span class="index-hook">Wiadomość commita nie jest polem, które da się poprawić — jest częścią commita. Dlatego „popraw opis” zawsze oznacza zbudowanie commita od nowa.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-14-rebase-interaktywny.html">
+        <span class="index-num">Rozdział 14 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">rebase -i: reword, squash, fixup, drop</span>
+        <span class="index-hook">Interaktywny rebase to lista poleceń, którą git wykonuje od góry. Nic w niej nie edytuje istniejących commitów — każda linia buduje nowe.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-15-reset-restore-revert.html">
+        <span class="index-num">Rozdział 15 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">reset, restore, revert — tabela decyzyjna</span>
+        <span class="index-hook">Trzy komendy, które w potocznym języku nazywa się tak samo: „cofnij”. Różnią się tym, które z trzech drzew ruszają — i czy zostawiają ślad w historii.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-16-fast-forward-i-odrzucony-push.html">
+        <span class="index-num">Rozdział 16 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Fast-forward i anatomia odrzuconego pusha</span>
+        <span class="index-hook">Zwykły push przechodzi tylko wtedy, gdy nowy commit jest potomkiem tego, który leży na serwerze. Cała reszta komunikatu o odrzuceniu to szczegóły tego jednego zdania.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-17-force-push.html">
+        <span class="index-num">Rozdział 17 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Force push: --force, --force-with-lease i granice</span>
+        <span class="index-hook">Wymuszony push mówi serwerowi: ustaw ten ref na mój SHA, cokolwiek tam leży. Różnica między dwoma wariantami polega na tym, czy najpierw sprawdzasz, co tam leży.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-18-reflog.html">
+        <span class="index-num">Rozdział 18 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">reflog: siatka bezpieczeństwa, o której się zapomina</span>
+        <span class="index-hook">Commit, do którego nie prowadzi żadna gałąź, nie znika. Leży na dysku, a git pamięta, gdzie był HEAD — domyślnie przez trzydzieści dni.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-19-stash-cherry-pick-worktree.html">
+        <span class="index-num">Rozdział 19 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">stash, cherry-pick, worktree</span>
+        <span class="index-hook">Trzy drobne narzędzia, po które sięga się rzadko i zawsze w pośpiechu. Każde z nich robi coś, co da się opisać jednym zdaniem o grafie.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-label raster">Część IV · Serwer i zespół (R.20–24)</div>
+    <p class="part-intro">Do tej pory wszystko działo się na Twoim dysku. Teraz dochodzi druga strona, która ma własne zdanie na temat tego, co wolno wypchnąć.</p>
+    <div class="index-list">
+      <a class="index-row" href="rozdzialy/rozdzial-20-co-sie-dzieje-przy-push.html">
+        <span class="index-num">Rozdział 20 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Co się dzieje przy push</span>
+        <span class="index-hook">Push to nie „wysyłka plików”. To prośba o zmianę wartości jednego refa na serwerze — i seria hooków, które mogą tę prośbę odrzucić.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-21-hooki-serwerowe.html">
+        <span class="index-num">Rozdział 21 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Hooki serwerowe walidują commity, nie stan gałęzi</span>
+        <span class="index-hook">Tu leży najczęstsze nieporozumienie: dopisanie commita z poprawką nie naprawia commita, który reguły złamał. Hook zobaczy oba.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-22-chronione-galezie-i-mr.html">
+        <span class="index-num">Rozdział 22 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Chronione gałęzie i merge request</span>
+        <span class="index-hook">Chroniona gałąź to taka, na której zwykły push jest niemożliwy z definicji. Cała praca idzie przez MR — a MR ma własne, nieoczywiste konsekwencje dla przepisywania historii.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-23-merge-squash-rebase-w-mr.html">
+        <span class="index-num">Rozdział 23 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Merge, squash czy rebase — co ląduje w masterze</span>
+        <span class="index-hook">Przycisk „Merge” robi trzy różne rzeczy w zależności od ustawienia projektu. Warto wiedzieć którą, bo od tego zależy, ile Twoich commitów zobaczy hook i historia.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-24-poswiadczenia-i-transport.html">
+        <span class="index-num">Rozdział 24 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Poświadczenia i transport: SSH, HTTPS, credential helper</span>
+        <span class="index-hook">Spora część „błędów gita” to w rzeczywistości brakujący program w PATH albo klucz, którego agent nie widzi. Warto umieć je odróżnić w dziesięć sekund.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-label raster">Część V · Git w dużym projekcie (R.25–29)</div>
+    <p class="part-intro">Wzorce, które pojawiają się wszędzie tam, gdzie repozytorium jest duże, a kod działa w środowisku zbudowanym z wielu modułów. Tu leży większość błędów, które wyglądają jak błędy Twojego kodu.</p>
+    <div class="index-list">
+      <a class="index-row" href="rozdzialy/rozdzial-25-galaz-sie-starzeje.html">
+        <span class="index-num">Rozdział 25 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Twoja gałąź się starzeje</span>
+        <span class="index-hook">Gałąź odbita tydzień temu testuje kod sprzed tygodnia w środowisku z dzisiaj. To nie jest ta sama konfiguracja, w której będzie działać po scaleniu.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-26-monorepo.html">
+        <span class="index-num">Rozdział 26 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Monorepo: Twój kod i cudze zależności w jednym drzewie</span>
+        <span class="index-hook">W jednym repozytorium leży biblioteka i jej konsument. Zmiana bywa spójną parą commitów — a Ty możesz mieć u siebie tylko jedną połowę tej pary.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-27-zbudowane-lokalnie-czy-z-release.html">
+        <span class="index-num">Rozdział 27 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Zbudowane lokalnie czy pobrane z release'u</span>
+        <span class="index-hook">Kod, który uruchamiasz, jest mieszanką: część modułów Twoja, część pobrana z centralnego wydania. Błąd na styku wygląda dokładnie jak zepsuty kod, a nie jest nim.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-28-srodowisko-nie-jest-w-gicie.html">
+        <span class="index-num">Rozdział 28 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Środowisko nie jest w gicie</span>
+        <span class="index-hook">Git przenosi treść plików. Nie przenosi zbudowanych modułów, zmiennych środowiskowych, kluczy ani tego, co masz w PATH — nawet jeśli ścieżka na drugiej maszynie wygląda identycznie.</span>
+      </a>
+      <a class="index-row" href="rozdzialy/rozdzial-29-okno-push-w-ide.html">
+        <span class="index-num">Rozdział 29 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Okno push w IDE i liczba commitów, która kłamie</span>
+        <span class="index-hook">Okno pusha porównuje Twoją gałąź z tym, co IDE pamięta o gałęzi zdalnej. Jeśli ta pamięć jest sprzed tygodnia, liczba commitów opisuje przeszłość, nie zawartość.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-label amber">Część VI · Kiedy jest źle (R.30)</div>
+    <p class="part-intro">Jedna strona, do której się wraca. Objaw, przyczyna, komenda.</p>
+    <div class="index-list">
+      <a class="index-row" href="rozdzialy/rozdzial-30-katalog-objawow.html">
+        <span class="index-num">Rozdział 30 <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Katalog objawów: co widzisz, co to znaczy, co zrobić</span>
+        <span class="index-hook">Ostatnia strona jest indeksem, nie wykładem. Komunikat po lewej, przyczyna w środku, komenda po prawej — i odnośnik do rozdziału, który tłumaczy dlaczego.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="part">
+    <div class="part-label violet">Dodatki · głębiej i na skróty (A–I)</div>
+    <p class="part-intro">Dziewięć stron, do których odsyłają rozdziały. Referencje, dwa studia przypadku i katalog recept — czyta się je wtedy, kiedy są potrzebne, nie po kolei.</p>
+    <div class="index-list">
+      <a class="index-row" href="dodatki/dodatek-a-sciagawka-komend.html">
+        <span class="index-num">Dodatek A <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Ściągawka: co ta komenda robi z grafem</span>
+        <span class="index-hook">Wszystkie komendy z książki na jednej stronie, opisane nie tym, jak się je wpisuje, ale tym, co przestawiają w grafie.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-b-gitconfig.html">
+        <span class="index-num">Dodatek B <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Konfiguracja, którą warto mieć</span>
+        <span class="index-hook">Aliasy, rerere, pull.rebase, ustawienia diffa — z uzasadnieniem przy każdej pozycji, żeby dało się je świadomie odrzucić.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-c-anatomia-katalogu-git.html">
+        <span class="index-num">Dodatek C <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Anatomia katalogu .git</span>
+        <span class="index-hook">Co naprawdę leży w .git: obiekty, refy, HEAD, packfile. Zwiedzanie z cat-file w ręku, na jednorazowym repozytorium.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-d-hash-jako-adres.html">
+        <span class="index-num">Dodatek D <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Hash jako adres: SHA-1, kolizje, SHA-256</span>
+        <span class="index-hook">Dlaczego adresowanie treścią w ogóle działa, co się dzieje przy kolizji i po co gitowi przejście na SHA-256.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-e-studium-hook-i-wiadomosc.html">
+        <span class="index-num">Dodatek E <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Studium przypadku: literówka kontra hook serwerowy</span>
+        <span class="index-hook">Prefiks zgubiony przy wklejaniu, hook pilnujący formatu, i pytanie, dlaczego drugi commit z poprawką niczego nie naprawia.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-f-studium-piec-usterek.html">
+        <span class="index-num">Dodatek F <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Studium przypadku: pięć usterek, jedna przyczyna</span>
+        <span class="index-hook">Pierwsze uruchomienie gałęzi po dłuższej przerwie, na dwóch maszynach. Żadna z awarii nie miała związku z nowym kodem.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-g-slownik-en-pl.html">
+        <span class="index-num">Dodatek G <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Słownik EN → PL</span>
+        <span class="index-hook">Dokumentacja gita jest po angielsku, a rozmowy w zespole po polsku. Tu jest mapowanie, razem z terminami, których lepiej nie tłumaczyć.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-h-dwadziescia-sytuacji.html">
+        <span class="index-num">Dodatek H <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Dwadzieścia sytuacji i wyjście z każdej</span>
+        <span class="index-hook">Pełne recepty na to, co zdarza się naprawdę: commit na złej gałęzi, detached HEAD, zgubiona praca, rebase w połowie, nadpisany branch.</span>
+      </a>
+      <a class="index-row" href="dodatki/dodatek-i-git-w-ide.html">
+        <span class="index-num">Dodatek I <span class="stan">w przygotowaniu</span></span>
+        <span class="index-title">Git w IDE: co ten przycisk uruchamia</span>
+        <span class="index-hook">Tłumaczenie interfejsu na komendy — dla PyCharma i VS Code — plus miejsca, w których IDE pokazuje coś innego, niż myślisz.</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="footer-note">
+    <p>Książka prywatna, trzymana lokalnie. Otwiera się z dysku — nie wymaga serwera ani sieci.</p>
+  </div>
+
+</div>
+</body>
+</html>

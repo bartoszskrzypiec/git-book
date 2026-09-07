@@ -1,0 +1,294 @@
+:root{
+  --bg:#14161a;
+  --bg-panel:#1b1e24;
+  --bg-panel-alt:#20242c;
+  --border:#2a2f38;
+  --text:#ecebe4;
+  --text-dim:#8b909b;
+  --amber:#e8a33d;
+  --cyan:#4fc3c0;
+  --violet:#9c82d8;
+  --raster:#6e93be;
+  --alarm:#d2685a;
+  --mono:'IBM Plex Mono',ui-monospace,Menlo,monospace;
+  --display:'Space Grotesk',ui-sans-serif,sans-serif;
+  --body:'IBM Plex Sans',ui-sans-serif,sans-serif;
+
+  /* Semantyka kolorow w TEJ ksiazce (hexy te same co w reszcie serii, znaczenie
+     inne — patrz CLAUDE.md):
+       --amber  = OBIEKT      (commit, drzewo, blob — to, co ma SHA i jest niezmienne)
+       --cyan   = WSKAZNIK    (galaz, HEAD, tag, origin/* — to, co sie przesuwa)
+       --violet = PRZEPISANIE (amend, rebase, reset, force push) + afordancja dodatkow
+       --raster = SERWER      (origin, hook, MR, CI, druga maszyna)
+       --alarm  = ODMOWA      (komunikat bledu, odrzucony push) — uzywany
+                              wylacznie w .konsola, nigdy w prozie
+
+     Ta os jest teza calej ksiazki: obiekty sa niezmienne, wskazniki sie
+     przesuwaja, a wszystko, co brzmi jak "edycja", jest przesunieciem
+     wskaznika na nowy obiekt. Inline SVG wpisuje te hexy na sztywno;
+     var() nie dziala w atrybutach prezentacyjnych SVG. */
+
+  /* Kontrakt tokenow toolkitu z learning-materials. widgets.css czyta
+     WYLACZNIE te nazwy, nigdy --amber/--cyan bezposrednio. Aliasujemy, nie
+     zmieniamy nazw — inaczej nastepna kopia toolkitu po cichu sie rozjedzie.
+     --code-bg i --bg sa czytane przez widgets.css, ale nie ma ich na liscie
+     w docs/INTEGRATION.md; bez nich .formula traci tlo. */
+  --text-muted: var(--text-dim);
+  --accent: var(--amber);
+  --bg-elevated: var(--bg-panel);
+  --code-bg: var(--bg-panel-alt);
+  --radius: 10px;
+  --viz-a: var(--violet);
+  --viz-b: var(--cyan);
+  --viz-grid: var(--border);
+  --viz-bg: var(--bg-panel-alt);
+}
+
+*{box-sizing:border-box;}
+html,body{margin:0;background:var(--bg,#14161a);min-height:100%;}
+body{font-family:var(--body);color:var(--text);line-height:1.65;-webkit-font-smoothing:antialiased;}
+.page{max-width:860px;margin:0 auto;padding:56px 24px 100px;background:var(--bg,#14161a);color:var(--text,#ecebe4);}
+
+/* NAWIGACJA GORNA */
+.topnav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;background:var(--bg-panel);border-bottom:1px solid var(--border);}
+.topnav__brand{font-family:var(--mono);font-weight:600;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;color:var(--text);white-space:nowrap;}
+.topnav__brand span{color:var(--amber);}
+.topnav__links{display:flex;align-items:center;gap:22px;font-family:var(--mono);font-size:12.5px;flex-wrap:wrap;}
+.topnav__links a{color:var(--text-dim);text-decoration:none;transition:color .15s;white-space:nowrap;}
+.topnav__links a:hover{color:var(--amber);}
+
+/* HERO */
+.viewport-readout{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--text-dim);text-transform:uppercase;display:flex;gap:18px;flex-wrap:wrap;padding-bottom:14px;margin-bottom:32px;border-bottom:1px solid var(--border);}
+.eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;color:var(--amber);text-transform:uppercase;margin-bottom:16px;}
+h1{font-family:var(--display);font-weight:600;font-size:clamp(30px,5vw,50px);line-height:1.08;margin:0 0 20px;letter-spacing:-0.01em;}
+.subtitle{font-size:17px;color:var(--text-dim);max-width:640px;}
+
+/* LINKI W PROZIE
+   Cyjan, bo w tej ksiazce cyjan znaczy "wskaznik", a odsylacz jest dokladnie
+   tym: wskaznikiem na tresc lezaca gdzie indziej. */
+.page p a, .panel li a, .panel p a, .index-hook a, .footer-note a,
+.section li a, .deeper-inline a, .dtab a {
+  color: var(--cyan);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--cyan);
+  transition: color .15s, border-color .15s;
+}
+.page p a:hover, .panel li a:hover, .panel p a:hover, .index-hook a:hover,
+.footer-note a:hover, .section li a:hover, .deeper-inline a:hover, .dtab a:hover {
+  color: var(--amber);
+  border-bottom-color: var(--amber);
+}
+
+.deeper-inline{font-family:var(--mono);font-size:12.5px;color:var(--text-dim);margin:-6px 0 22px;}
+.deeper-inline::before{content:"\21B3";color:var(--violet);margin-right:8px;}
+
+/* PANELE */
+.panel{background:var(--bg-panel);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin:40px 0;}
+.panel-label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--cyan);text-transform:uppercase;margin-bottom:14px;}
+.panel ul{margin:0;padding-left:20px;}
+.panel li{margin-bottom:9px;}
+.panel li:last-child{margin-bottom:0;}
+.panel.glossary .panel-label{color:var(--violet);}
+.panel.practice .panel-label{color:var(--amber);}
+.panel.practice p{margin:0;font-size:15.5px;color:var(--text);}
+.panel.practice p+p{margin-top:12px;}
+.glossary dl{margin:0;}
+.glossary dt{font-family:var(--mono);font-weight:500;color:var(--text);margin-top:14px;font-size:14.5px;}
+.glossary dt:first-child{margin-top:0;}
+.glossary dd{margin:2px 0 0;color:var(--text-dim);font-size:14.5px;}
+
+/* Ostrzezenie — blok dla zdan typu "nigdy nie rob tego na chronionej galezi".
+   Osobny od .panel.practice, bo praktyka radzi, a ostrzezenie zabrania. */
+.uwaga{border:1px solid var(--alarm);border-left-width:3px;border-radius:8px;background:rgba(210,104,90,.06);padding:18px 22px;margin:28px 0;}
+.uwaga .panel-label{color:var(--alarm);}
+.uwaga p{margin:0;font-size:15.5px;}
+.uwaga p+p{margin-top:10px;}
+
+/* SEKCJE */
+.section{margin:60px 0;}
+.section-eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--text-dim);text-transform:uppercase;margin-bottom:10px;}
+.section h2{font-family:var(--display);font-weight:600;font-size:clamp(23px,3vw,29px);margin:0 0 18px;}
+.section p{margin:0 0 16px;font-size:16px;}
+.section ul.compact{margin:0 0 16px;padding-left:20px;}
+.section ul.compact li{margin-bottom:8px;}
+.section ol.compact{margin:0 0 16px;padding-left:22px;}
+.section ol.compact li{margin-bottom:8px;}
+
+/* Termin wyrozniony w prozie. Pisze sie znaczeniem, nie kolorem — dzieki temu
+   w zrodle widac, o czym mowa, a nie jakiego koloru uzyto. */
+.term-obiekt,.term-amber{color:var(--amber);font-weight:600;}
+.term-ref,.term-cyan{color:var(--cyan);font-weight:600;}
+.term-przepis,.term-violet{color:var(--violet);font-weight:600;}
+.term-serwer,.term-raster{color:var(--raster);font-weight:600;}
+
+/* Nazwa komendy albo refa w prozie. Nie tlumaczymy ich i nie odmieniamy —
+   to nazwy wlasne, wiec maja wygladac jak cytat z terminala. */
+.section code,.panel code,.dtab code,.uwaga code{font-family:var(--mono);font-size:.92em;color:var(--text);background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:4px;padding:1px 6px;white-space:nowrap;}
+
+/* KONSOLA — cytat z terminala.
+   Polowa nauki gita to rozpoznanie komunikatu co do znaku, wiec bloki
+   konsoli sa w tej ksiazce tym, czym w ksiazkach o fizyce sa wzory:
+   glownym nosnikiem tresci, nie ozdoba. Stad wlasny blok, a nie <pre>
+   wrzucone w akapit. */
+.konsola{border:1px solid var(--border);border-radius:8px;background:#15171b;margin:24px 0;overflow:hidden;}
+.konsola-label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--text-dim);padding:8px 16px;border-bottom:1px solid var(--border);background:var(--bg-panel);display:flex;justify-content:space-between;gap:12px;}
+.konsola pre{margin:0;padding:16px;font-family:var(--mono);font-size:13px;line-height:1.7;color:var(--text-dim);overflow-x:auto;}
+.konsola .cmd{color:var(--text);}
+.konsola .cmd::before{content:"$ ";color:var(--amber);}
+.konsola .sha{color:var(--amber);}
+.konsola .ref{color:var(--cyan);}
+.konsola .err{color:var(--alarm);}
+.konsola .ok{color:var(--cyan);}
+.konsola .komentarz{color:var(--text-dim);font-style:italic;}
+.konsola-opis{font-family:var(--mono);font-size:12px;color:var(--text-dim);margin:-14px 0 24px;padding-left:2px;}
+
+/* TABELA DECYZYJNA / DANYCH
+   Komorki nie zawijaja, bo lamana komenda jest gorsza niz przewijanie;
+   zamiast tego cala tabela dostaje wlasny kontener ze scrollem, zeby strona
+   nigdy nie jechala w poziomie. */
+.dtab-wrap{overflow-x:auto;margin:24px 0;border:1px solid var(--border);border-radius:8px;background:var(--bg-panel-alt);}
+.dtab{border-collapse:collapse;width:100%;font-family:var(--mono);font-size:13px;}
+.dtab th,.dtab td{padding:9px 16px;text-align:left;vertical-align:top;border-bottom:1px solid var(--border);}
+.dtab thead th{color:var(--cyan);font-weight:500;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;white-space:nowrap;}
+.dtab tbody td{color:var(--text-dim);}
+.dtab tbody td:first-child{color:var(--text);white-space:nowrap;}
+.dtab tbody tr:last-child td{border-bottom:none;}
+.dtab-caption{font-family:var(--mono);font-size:12px;color:var(--text-dim);margin:-12px 0 24px;}
+
+/* DIAGRAM */
+.diagram-frame{position:relative;border:1px solid var(--border);border-radius:10px;background:var(--bg-panel);padding:16px 16px 20px;margin:26px 0;}
+.diagram-hud{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10px;letter-spacing:.05em;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;gap:12px;}
+.diagram-frame svg{width:100%;height:auto;display:block;}
+.diagram-caption{font-family:var(--mono);font-size:12px;color:var(--text-dim);margin-top:14px;text-align:center;}
+
+/* WZOR — rzadki w tej ksiazce, ale Dodatek D liczy hash. */
+.formula{font-family:var(--mono);background:var(--code-bg);border:1px solid var(--border);border-radius:8px;padding:16px 18px;margin:22px 0;font-size:15px;color:var(--amber);text-align:center;letter-spacing:.02em;overflow-x:auto;line-height:1.8;}
+.formula .sub{display:block;margin-top:8px;font-size:12.5px;color:var(--text-dim);letter-spacing:0;white-space:normal;}
+.formula .vec{color:var(--cyan);font-weight:700;cursor:help;border-bottom:1px dotted var(--cyan);}
+.vec-tooltip{position:fixed;z-index:200;display:none;background:var(--bg-panel-alt);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--mono);font-size:12.5px;font-weight:400;color:var(--text);max-width:280px;pointer-events:none;box-shadow:0 4px 16px rgba(0,0,0,.4);}
+
+/* PRZESLEDZ KROK PO KROKU */
+.worked{background:#15171b;border:1px solid var(--border);border-left:3px solid var(--cyan);border-radius:6px;padding:18px 22px;margin:18px 0;font-family:var(--mono);font-size:13.5px;overflow-x:auto;}
+.worked .wlabel{color:var(--cyan);text-transform:uppercase;letter-spacing:.08em;font-size:10.5px;margin-bottom:14px;}
+.worked .step{margin:0 0 10px;color:var(--text-dim);}
+.worked .step:last-child{margin-bottom:0;}
+.worked .step .k{color:var(--violet);}
+.worked .v{color:var(--text);}
+.worked .result{color:var(--amber);font-weight:600;}
+.worked .check{color:var(--text-dim);font-style:italic;font-size:12.5px;margin-top:12px;padding-top:12px;border-top:1px dashed var(--border);}
+
+.note{font-size:13px;color:var(--text-dim);font-style:italic;}
+
+/* NEXT / ZAMKNIECIE */
+.next{border-top:1px solid var(--border);margin-top:70px;padding-top:32px;}
+.closing{margin-top:80px;padding-top:40px;border-top:1px solid var(--border);text-align:center;}
+.closing p{font-size:17px;color:var(--text-dim);max-width:560px;margin:0 auto 16px;}
+.closing .sign{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--amber);text-transform:uppercase;margin-top:24px;}
+
+/* SPIS TRESCI (index.html) */
+.part{margin:56px 0;}
+.part-label{font-family:var(--mono);font-size:12px;letter-spacing:.1em;color:var(--cyan);text-transform:uppercase;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid var(--border);}
+.part-label.violet{color:var(--violet);}
+.part-label.amber{color:var(--amber);}
+.part-label.raster{color:var(--raster);}
+.part-intro{font-size:14.5px;color:var(--text-dim);margin:-6px 0 20px;max-width:660px;}
+.index-list{display:flex;flex-direction:column;}
+.index-row{display:block;padding:14px 4px;text-decoration:none;color:var(--text);border-bottom:1px solid var(--border);transition:padding-left .15s,border-color .15s;}
+.index-list .index-row:first-child{border-top:1px solid var(--border);}
+.index-row:hover{padding-left:10px;border-color:var(--amber);}
+.index-num{font-family:var(--mono);font-size:10.5px;color:var(--text-dim);letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:4px;}
+.index-title{font-size:15.5px;font-weight:500;display:block;}
+/* Znacznik stanu w spisie tresci. Ksiazka jest zywa i wymienia wszystkie
+   strony od pierwszego dnia, wiec czytelnik musi widziec, ktore juz sa
+   napisane, zanim kliknie. Utrzymywany przez dev/stan.py. */
+.stan{display:inline-block;margin-left:10px;font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 9px;border-radius:10px;border:1px solid var(--border);color:var(--text-dim);vertical-align:1px;}
+.stan--gotowy{color:var(--amber);border-color:var(--amber);}
+.index-row:has(.stan--gotowy) .index-title{color:var(--text);}
+.index-row:not(:has(.stan--gotowy)) .index-title{color:var(--text-dim);}
+.index-hook{font-size:13.5px;color:var(--text-dim);display:block;margin-top:4px;max-width:640px;}
+.footer-note{margin-top:70px;padding-top:28px;border-top:1px solid var(--border);font-size:13.5px;color:var(--text-dim);}
+
+/* IDZ GLEBIEJ */
+.deeper{border-top:1px solid var(--border);margin-top:56px;padding-top:24px;}
+.deeper-label{font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--violet);text-transform:uppercase;margin-bottom:12px;}
+.deeper a{display:block;color:var(--text);text-decoration:none;font-size:14.5px;margin-bottom:8px;border-bottom:1px dotted var(--border);padding-bottom:8px;}
+.deeper a:last-child{margin-bottom:0;border-bottom:none;padding-bottom:0;}
+.deeper a:hover{color:var(--amber);}
+.inline-deeper{display:inline-block;margin:8px 0 4px;padding:5px 14px;border:1px solid var(--border);border-radius:14px;font-family:var(--mono);font-size:12px;color:var(--violet);text-decoration:none;transition:border-color .15s,color .15s;}
+.inline-deeper:hover{border-color:var(--amber);color:var(--amber);}
+
+/* PODSEKCJA (dodatki) */
+.subsection{margin:36px 0;}
+.subsection h3{font-family:var(--display);font-weight:600;font-size:18px;margin:0 0 14px;color:var(--text);}
+.subsection p{margin:0 0 14px;font-size:15.5px;}
+
+/* PRZYCISKI */
+.reveal-btn{font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--amber);background:none;border:1px solid var(--amber);border-radius:20px;padding:6px 16px;cursor:pointer;transition:background .2s;}
+.reveal-btn:hover{background:rgba(232,163,61,0.12);}
+.advanced-btn{font-family:var(--mono);font-size:12px;letter-spacing:.05em;color:var(--violet);background:none;border:1px solid var(--violet);border-radius:20px;padding:6px 16px;cursor:pointer;transition:background .2s;margin-top:10px;}
+.advanced-btn:hover{background:rgba(156,130,216,0.12);}
+.answer{display:none;margin-top:14px;padding-top:14px;border-top:1px dashed var(--border);font-family:var(--mono);font-size:13.5px;color:var(--cyan);}
+.answer.shown{display:block;}
+
+/* NAWIGACJA DOLNA */
+.site-nav{border-top:1px solid var(--border);margin-top:70px;padding-top:24px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:13px;}
+.site-nav a{color:var(--text-dim);text-decoration:none;transition:color .15s;}
+.site-nav a:hover{color:var(--amber);}
+.site-nav.chapter-nav{display:grid;grid-template-columns:1fr 1fr 1fr;align-items:center;}
+.site-nav.chapter-nav a.nav-prev{grid-column:1;text-align:left;}
+.site-nav.chapter-nav a.nav-toc{grid-column:2;text-align:center;}
+.site-nav.chapter-nav a.nav-next{grid-column:3;text-align:right;}
+
+/* SUWAKI PRZY DIAGRAMACH */
+.diagram-controls{display:flex;align-items:center;gap:12px;margin:0 0 16px;font-family:var(--mono);font-size:12.5px;color:var(--text-dim);flex-wrap:wrap;}
+.diagram-controls input[type=range]{flex:1;min-width:120px;accent-color:var(--amber);}
+.diagram-controls .value-readout{color:var(--amber);white-space:nowrap;}
+.diagram-controls button{font-family:var(--mono);font-size:11.5px;padding:5px 13px;border:1px solid var(--border);border-radius:14px;background:var(--bg-panel);color:var(--text-dim);cursor:pointer;transition:color .15s,border-color .15s;}
+.diagram-controls button:hover{color:var(--text);border-color:var(--text-dim);}
+.diagram-controls button.is-active{color:var(--amber);border-color:var(--amber);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,11,13,.75);z-index:100;padding:24px;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal-panel{position:relative;background:var(--bg-panel);border:1px solid var(--border);border-radius:12px;max-width:640px;max-height:85vh;overflow-y:auto;padding:32px 32px 28px;}
+.modal-panel h3{font-family:var(--display);font-weight:600;font-size:clamp(19px,3vw,23px);margin:0 0 18px;color:var(--text);}
+.modal-panel p{margin:0 0 14px;font-size:15px;color:var(--text);}
+.modal-panel p:last-child{margin-bottom:0;}
+.modal-panel ul{margin:0 0 14px;padding-left:20px;}
+.modal-panel li{margin-bottom:10px;font-size:15px;}
+.modal-panel strong{color:var(--amber);}
+.modal-panel em{color:var(--text-dim);}
+.modal-panel a{color:var(--cyan);}
+.modal-panel .konsola{margin:16px 0;}
+.modal-close{position:absolute;top:14px;right:14px;width:30px;height:30px;border-radius:50%;border:1px solid var(--border);background:var(--bg-panel-alt);color:var(--text-dim);font-size:16px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:color .15s,border-color .15s;}
+.modal-close:hover{color:var(--amber);border-color:var(--amber);}
+
+/* FOKUS KLAWIATURY */
+a:focus-visible,button:focus-visible,input:focus-visible,.vec:focus-visible{
+  outline:2px solid var(--amber);
+  outline-offset:3px;
+  border-radius:4px;
+}
+
+@media(prefers-reduced-motion:reduce){
+  *{transition:none !important;animation:none !important;}
+}
+
+/* WASKIE EKRANY */
+@media (max-width:560px){
+  .topnav{flex-wrap:wrap;gap:8px 16px;padding:12px 18px;}
+  .topnav__brand{font-size:11px;}
+  .topnav__links{gap:14px;font-size:11.5px;}
+  .page{padding:36px 16px 80px;}
+  .site-nav.chapter-nav{grid-template-columns:1fr;gap:14px;}
+  .site-nav.chapter-nav a.nav-prev,
+  .site-nav.chapter-nav a.nav-toc,
+  .site-nav.chapter-nav a.nav-next{grid-column:1;text-align:left;}
+  .viewport-readout{gap:10px;}
+  .panel{padding:20px 18px;margin:32px 0;}
+  .diagram-frame{padding:12px 12px 16px;}
+  .section{margin:44px 0;}
+  .modal-panel{padding:26px 20px 22px;}
+  .konsola pre{font-size:12px;padding:14px;}
+  .diagram-controls .value-readout{white-space:normal;}
+}

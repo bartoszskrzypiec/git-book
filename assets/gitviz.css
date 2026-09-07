@@ -1,0 +1,113 @@
+/* ============================================================
+   .gitviz — warstwa komponentu dla assets/gitgraph.js
+
+   Widget rysuje graf commitow: po lewej repozytorium lokalne, po prawej
+   origin. Przyciski przestawiaja stan, a graf przerysowuje sie w miejscu.
+   Sam silnik nie dotyka wygladu — cale malowanie jest tutaj i w atrybutach
+   SVG generowanych przez gitgraph.js.
+
+   Kolory bierzemy z tokenow ksiazki (patrz style.css):
+     --amber  obiekt/commit    --cyan   wskaznik/ref
+     --violet przepisanie      --raster serwer      --alarm odmowa
+
+   Plik jest lokalny dla tej ksiazki, NIE jest kopia z learning-materials.
+   ============================================================ */
+
+.gitviz{
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:var(--bg-panel);
+  padding:16px 16px 18px;
+  margin:28px 0;
+}
+
+.gitviz__head{margin-bottom:12px;}
+.gitviz__title{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin:0 0 4px;}
+.gitviz__sub{font-size:13.5px;color:var(--text-dim);margin:0;}
+
+.gitviz__stage{
+  position:relative;
+  border-radius:8px;
+  background:var(--bg-panel-alt);
+  padding:8px;
+  overflow-x:auto;
+}
+.gitviz__stage svg{display:block;width:100%;height:auto;min-width:320px;}
+
+/* Krok scenariusza: strzalki i opis tego, co wlasnie sie stalo. */
+.gitviz__steps{
+  display:flex;align-items:center;gap:12px;
+  margin-top:14px;
+  font-family:var(--mono);font-size:12.5px;color:var(--text-dim);
+}
+.gitviz__steps button{
+  font-family:var(--mono);font-size:13px;line-height:1;
+  width:32px;height:32px;flex:none;
+  border:1px solid var(--border);border-radius:50%;
+  background:var(--bg-panel);color:var(--text-dim);
+  cursor:pointer;transition:color .15s,border-color .15s;
+}
+.gitviz__steps button:hover:not(:disabled){color:var(--amber);border-color:var(--amber);}
+.gitviz__steps button:disabled{opacity:.3;cursor:default;}
+.gitviz__steps [data-git-label]{flex:1;color:var(--text);}
+.gitviz__steps .licznik{color:var(--text-dim);white-space:nowrap;}
+
+/* Operacje wpisane recznie przez czytelnika — kazdy przycisk to jedna
+   komenda gita. Fiolet dla wszystkiego, co przepisuje historie: kolor jest
+   ostrzezeniem, zanim czytelnik przeczyta nazwe. */
+.gitviz__ops{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.gitviz__ops button{
+  font-family:var(--mono);font-size:11.5px;
+  padding:6px 13px;
+  border:1px solid var(--border);border-radius:14px;
+  background:var(--bg-panel);color:var(--text-dim);
+  cursor:pointer;transition:color .15s,border-color .15s,background .15s;
+}
+.gitviz__ops button:hover:not(:disabled){color:var(--text);border-color:var(--text-dim);}
+.gitviz__ops button:disabled{opacity:.35;cursor:default;}
+.gitviz__ops button[data-git-op^="amend"],
+.gitviz__ops button[data-git-op^="rebase"],
+.gitviz__ops button[data-git-op^="reset"],
+.gitviz__ops button[data-git-op^="pushForce"]{color:var(--violet);border-color:rgba(156,130,216,.45);}
+.gitviz__ops button[data-git-op^="amend"]:hover:not(:disabled),
+.gitviz__ops button[data-git-op^="rebase"]:hover:not(:disabled),
+.gitviz__ops button[data-git-op^="reset"]:hover:not(:disabled),
+.gitviz__ops button[data-git-op^="pushForce"]:hover:not(:disabled){border-color:var(--violet);background:rgba(156,130,216,.1);}
+.gitviz__ops button[data-git-op="reset-widget"]{margin-left:auto;color:var(--text-dim);}
+
+/* Wyjscie komendy. Wyglada jak .konsola z prozy, bo to ma byc ten sam
+   obiekt: czytelnik ma rozpoznawac komunikat, nie uczyc sie dwoch skladni. */
+.gitviz__out{
+  margin:14px 0 0;padding:12px 14px;
+  border:1px solid var(--border);border-radius:6px;background:#15171b;
+  font-family:var(--mono);font-size:12.5px;line-height:1.65;
+  color:var(--text-dim);white-space:pre-wrap;overflow-x:auto;
+  min-height:2.6em;
+}
+.gitviz__out .cmd{color:var(--text);}
+.gitviz__out .cmd::before{content:"$ ";color:var(--amber);}
+.gitviz__out .err{color:var(--alarm);}
+.gitviz__out .ok{color:var(--cyan);}
+.gitviz__out .sha{color:var(--amber);}
+
+.gitviz__note{font-family:var(--mono);font-size:12px;color:var(--text-dim);margin:14px 0 0;}
+
+/* Bez JavaScriptu (albo gdy modul sie nie wczyta) widget zostaje ramka
+   z jednym zdaniem. Kazdy .gitviz niesie ten blok w zrodle; skrypt go
+   chowa po udanym starcie. Ta sama zasada co .viz3d__fallback w ksiazkach
+   siostrzanych: strona ma byc kompletna bez widgetu. */
+.gitviz__fallback{
+  padding:18px;border:1px dashed var(--border);border-radius:8px;
+  color:var(--text-dim);font-size:13.5px;
+}
+.gitviz__fallback strong{display:block;color:var(--text);margin-bottom:6px;font-weight:600;}
+.gitviz.is-live .gitviz__fallback{display:none;}
+.gitviz:not(.is-live) .gitviz__steps,
+.gitviz:not(.is-live) .gitviz__ops,
+.gitviz:not(.is-live) .gitviz__out{display:none;}
+
+@media (max-width:560px){
+  .gitviz{padding:12px 12px 14px;}
+  .gitviz__ops button{font-size:11px;padding:5px 11px;}
+  .gitviz__ops button[data-git-op="reset-widget"]{margin-left:0;}
+}
