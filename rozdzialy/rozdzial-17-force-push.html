@@ -30,7 +30,167 @@
   <h1>Force push: --force, --force-with-lease i granice</h1>
   <p class="subtitle">Wymuszony push mówi serwerowi: ustaw ten ref na mój SHA, cokolwiek tam leży. Różnica między dwoma wariantami polega na tym, czy najpierw sprawdzasz, co tam leży.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Wymuszony push mówi serwerowi: <strong>ustaw ten ref na mój skrót, cokolwiek tam leży</strong>. Nie scala, nie porównuje, nie pyta.</li>
+      <li><code>--force-with-lease</code> robi to samo, ale najpierw sprawdza, czy po drugiej stronie jest to, czego się spodziewasz. Jeśli ktoś zdążył coś dołożyć — odmawia z komunikatem <code>stale info</code>.</li>
+      <li>Granica nie jest techniczna, tylko społeczna: wolno nadpisywać to, czego <strong>nikt inny nie używa jako punktu odniesienia</strong>. Wszystko poza tym jest cudzą sprawą.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Co ta komenda właściwie robi</div>
+    <h2>Bez pytania, bez scalania</h2>
+
+    <p>Zwykły push prosi o przesunięcie refa i przyjmuje odmowę. Wymuszony push nie prosi — nakazuje. Serwer ustawia wskazaną wartość i tyle; commity, które były tam wcześniej, przestają być przez cokolwiek wskazywane.</p>
+
+    <p>Warto od razu zauważyć, czego wymuszony push <strong>nie robi</strong>. Nie kasuje commitów — one zostają w repozytorium po tamtej stronie, dokładnie tak samo jak stary commit po amendzie zostaje u Ciebie. Nie łączy niczego z niczym. I nie ostrzega przed niczym poza tym, o co sam poprosisz.</p>
+
+    <p>W wyniku widać to jako trzy kropki między skrótami i słowo w nawiasie:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git push --force-with-lease</span><span>gdy wszystko się zgadza</span></div>
+<pre><span class="cmd">git push --force-with-lease</span>
+To ../origin.git
+<span class="ok"> + 7fbdb3e...407463b  ABC-1234 -&gt; ABC-1234 (forced update)</span></pre>
+    </div>
+    <p class="konsola-opis">Przy zwykłym pushu byłyby dwie kropki. Trzy oznaczają: to nie było przewinięcie do przodu.</p>
+
+    <p>Ten znak plus na początku linii i te trzy kropki to jedyne miejsce, w którym git informuje, że stało się coś nieodwracalnego dla drugiej strony. Warto je rozpoznawać, bo w oknie IDE zwykle nie widać ich wcale.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Dwa warianty · i dlaczego jeden jest lepszy</div>
+    <h2><code>--force</code> kontra <code>--force-with-lease</code></h2>
+
+    <p>Gołe <code>--force</code> nadpisuje ref bez żadnego warunku. Jeśli w międzyczasie ktoś wypchnął tam swoją pracę, zniknie ona z gałęzi — nie z repozytorium, ale z tego, co ktokolwiek zobaczy — a Ty nie dowiesz się, że w ogóle istniała.</p>
+
+    <p><code>--force-with-lease</code> dokłada jeden warunek: <em>przejdź tylko wtedy, gdy zdalny ref ma dokładnie tę wartość, którą ja u siebie zapamiętałem</em>. To jest ta sama wartość, którą widzisz jako <code>origin/ABC-1234</code>. Jeśli się nie zgadza, znaczy to, że po ostatnim pobraniu coś się tam wydarzyło — więc push zostaje odrzucony:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git push --force-with-lease</span><span>gdy ktoś zdążył coś wypchnąć</span></div>
+<pre><span class="cmd">git push --force-with-lease</span>
+To ../origin.git
+<span class="err"> ! [rejected]        master -&gt; master (stale info)</span>
+<span class="err">error: failed to push some refs</span></pre>
+    </div>
+    <p class="konsola-opis"><code>stale info</code> to jedyny komunikat gita, który znaczy: „twoje wyobrażenie o serwerze jest nieaktualne”.</p>
+
+    <p>Ten komunikat jest dobrą wiadomością, choć wygląda jak zła. Właśnie uratował cudzą pracę, którą gołe <code>--force</code> nadpisałoby bez słowa. Właściwa reakcja to <code>git fetch</code>, spojrzenie, co przyszło, i dopiero potem decyzja.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>co sprawdza lease</span><span>trzy wartosci</span></div>
+      <svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Porównanie trzech wartości: origin remote, lokalny ref origin oraz HEAD">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="40" width="176" height="58" rx="8" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="102" y="64" text-anchor="middle" font-size="11" fill="#6e93be">na serwerze</text>
+          <text x="102" y="84" text-anchor="middle" font-size="11" fill="#8b909b">9f21c40</text>
+
+          <rect x="222" y="40" width="176" height="58" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="310" y="64" text-anchor="middle" font-size="11" fill="#4fc3c0">origin/ABC-1234</text>
+          <text x="310" y="84" text-anchor="middle" font-size="11" fill="#8b909b">7fbdb3e</text>
+
+          <rect x="430" y="40" width="176" height="58" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="518" y="64" text-anchor="middle" font-size="11" fill="#e8a33d">HEAD</text>
+          <text x="518" y="84" text-anchor="middle" font-size="11" fill="#8b909b">407463b</text>
+
+          <path d="M 102 112 L 102 132 L 310 132 L 310 112" stroke="#d2685a" stroke-width="2" fill="none"/>
+          <text x="206" y="152" text-anchor="middle" font-size="10.5" fill="#d2685a">lease porownuje TE DWIE &#8212; nie zgadzaja sie, wiec odmowa</text>
+
+          <text x="14" y="184" font-size="10.5" fill="#8b909b">gole --force pomija to porownanie i po prostu ustawia 407463b</text>
+          <text x="14" y="202" font-size="10.5" fill="#8b909b">origin/ABC-1234 to Twoja lokalna pamiec o serwerze &#8212; aktualizuje ja tylko fetch</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Warunek dotyczy tego, co pamiętasz o serwerze — dlatego <code>fetch</code> tuż przed wymuszeniem osłabia zabezpieczenie.</div>
+    </div>
+
+    <p>Wynika stąd rzecz nieoczywista: <strong>odruchowe <code>git fetch</code> tuż przed <code>--force-with-lease</code> psuje sens tego wariantu</strong>. Fetch aktualizuje Twoją pamięć o serwerze, więc warunek zaczyna się zgadzać i push przechodzi — łącznie z nadpisaniem tego, co właśnie pobrałeś. Pobieraj, patrz, decyduj; nie pobieraj po to, żeby przestało protestować.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Granica · pięć pytań przed wymuszeniem</div>
+    <h2>Kiedy wolno, a kiedy nie</h2>
+
+    <p>Technicznie wymusić można prawie zawsze. Pytanie brzmi, kto poza Tobą używa tego refa jako punktu odniesienia — bo dla każdej takiej osoby historia zmieni się pod ręką.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Pytanie</th><th>Odpowiedź, która pozwala</th></tr></thead>
+        <tbody>
+          <tr><td>Czy to moja gałąź funkcyjna?</td><td>Tak. Gałęzie chronione odpadają z definicji.</td></tr>
+          <tr><td>Czy jest już otwarty merge request?</td><td>Nie — albo tak, ale nikt jeszcze nie recenzował.</td></tr>
+          <tr><td>Czy ktoś odbił od niej swoją gałąź?</td><td>Nie.</td></tr>
+          <tr><td>Czy ktoś ją u siebie pobrał?</td><td>Nie wiem — i wtedy trzeba zapytać.</td></tr>
+          <tr><td>Czy mam zapisany stary skrót?</td><td>Tak, choćby w reflogu.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Cztery pierwsze pytania dotyczą innych ludzi. Tylko ostatnie dotyczy gita.</p>
+
+    <p>Dla osoby, która pobrała starą wersję gałęzi, wymuszony push wygląda dokładnie tak, jak wyglądałby dla Ciebie: przy najbliższym pobraniu jej gałąź lokalna i zdalna okażą się rodzeństwem, a <code>git pull</code> zrobi scalenie, wciągając z powrotem commity, które właśnie wyrzuciłeś. Dlatego uprzedzenie zespołu jednym zdaniem jest tańsze niż sprzątanie tego potem.</p>
+
+    <div class="uwaga">
+      <div class="panel-label">Trzy miejsca, w których to jest zawsze błąd</div>
+      <p>Gałęzie chronione (<code>master</code>, <code>main</code>, wydaniowe) — tam serwer i tak odmówi, a jeśli nie odmawia, to konfiguracja jest zepsuta. Gałąź w trakcie recenzji — komentarze przypięte do konkretnych skrótów tracą kotwicę. Gałąź, na której pracuje ktoś jeszcze — nadpisujesz mu punkt odniesienia i jego następny <code>pull</code> zrobi bałagan, którego on nie zrozumie.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Na żywo · odmowa i wymuszenie obok siebie</div>
+    <h2>Ta sama gałąź, dwie odpowiedzi serwera</h2>
+
+    <p>Widget poniżej przechodzi obie sytuacje w jednym scenariuszu: najpierw push, który przechodzi, potem — po cofnięciu gałęzi — ten sam push, który zostaje odrzucony. Przycisk wymuszenia jest obok, więc możesz zobaczyć, co się dzieje z panelem serwera, kiedy z niego skorzystasz.</p>
+
+    <div class="gitviz" data-git-scenario="fastForward">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Zgoda, odmowa, wymuszenie</p>
+        <p class="gitviz__sub">Przejdź cztery kroki, a potem naciśnij wymuszenie i patrz na dolny panel.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — oba komunikaty są zacytowane w tekście.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="push">git push</button>
+        <button data-git-op="pushForce">git push --force-with-lease</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Po wymuszeniu commit, który był na serwerze, przestaje być przez cokolwiek wskazywany — dokładnie tak samo jak po amendzie u Ciebie.</p>
+    </div>
+
+    <p>W widgecie wszystko dzieje się na jednym ekranie, więc trudno się pomylić co do skutków. W rzeczywistości drugiego panelu nie widać — jedyne, co masz, to trzy linie komunikatu. Dlatego warto wyrobić sobie odruch czytania ich uważnie: <strong>plus i trzy kropki oznaczają, że po drugiej stronie coś przestało istnieć</strong> dla wszystkich poza tym, kto zna skrót.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Ustaw sobie <code>git config --global alias.pushf 'push --force-with-lease'</code> i używaj wyłącznie tego skrótu. Gołe <code>--force</code> jest wtedy o kilka znaków dalej niż wariant bezpieczny, a to wystarczy, żeby nie sięgać po nie odruchowo.</p>
+    <p>W IDE sprawdź raz, którego wariantu używa przycisk „Force push”. Część narzędzi wysyła <code>--force-with-lease</code>, część gołe <code>--force</code>, a różnica ujawnia się dopiero w dniu, w którym ktoś inny akurat pracował na tej samej gałęzi.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>--force</dt><dd>Ustaw zdalny ref na moją wartość bez żadnego warunku.</dd>
+      <dt>--force-with-lease</dt><dd>To samo, ale tylko jeśli zdalny ref ma wartość, którą pamiętam z ostatniego pobrania.</dd>
+      <dt>stale info</dt><dd>Odmowa wariantu z lease: po drugiej stronie leży coś innego, niż myślisz.</dd>
+      <dt>forced update</dt><dd>Potwierdzenie w wyniku pusha, z plusem i trzema kropkami. Oznacza, że coś przestało być wskazywane.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Trzy poprzednie rozdziały kończyły się tym samym zdaniem: „stary commit zostaje w reflogu”. Następny rozdział pokazuje, czym ten reflog jest, jak długo działa i jak z niego skorzystać w chwili, w której wydaje się, że praca zniknęła.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +202,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

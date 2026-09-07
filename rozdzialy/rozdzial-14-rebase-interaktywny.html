@@ -30,7 +30,170 @@
   <h1>rebase -i: reword, squash, fixup, drop</h1>
   <p class="subtitle">Interaktywny rebase to lista poleceń, którą git wykonuje od góry. Nic w niej nie edytuje istniejących commitów — każda linia buduje nowe.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Interaktywny rebase to <strong>lista poleceń</strong>, którą git wykonuje od góry do dołu. Nie edytuje niczego — buduje commity od nowa, jeden po drugim.</li>
+      <li>Cztery polecenia załatwiają dziewięćdziesiąt procent przypadków: <code>reword</code> (zmień opis), <code>squash</code> i <code>fixup</code> (scal z poprzednim), <code>drop</code> (wyrzuć).</li>
+      <li>Wszystko, co przepiszesz, dostaje nowe skróty — także commity, których w liście nie tknąłeś, jeśli leżą powyżej zmienionego. Dlatego rebase kończy się tak samo jak amend: gałąź trzeba wypchnąć siłą.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Punkt wyjścia · lista, nie edytor</div>
+    <h2>Co się otwiera po <code>rebase -i</code></h2>
+
+    <p>Wpisujesz <code>git rebase -i HEAD~2</code> i otwiera się plik. Nie jest to edytor commitów ani formularz — to zwykły plik tekstowy z listą poleceń do wykonania:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git rebase -i HEAD~2</span><span>plik zadań, skrócony</span></div>
+<pre>pick <span class="sha">a5a32af</span> # Commit 2
+pick <span class="sha">e72b434</span> # Commit 3
+
+# Rebase e0cffc1..e72b434 onto e0cffc1 (2 commands)
+#
+# Commands:
+# p, pick &lt;commit&gt; = use commit
+# r, reword &lt;commit&gt; = use commit, but edit the commit message
+# e, edit &lt;commit&gt; = use commit, but stop for amending
+# s, squash &lt;commit&gt; = use commit, but meld into previous commit
+# f, fixup [-C | -c] &lt;commit&gt; = like "squash" but keep only the previous
+#                    commit's log message
+# d, drop &lt;commit&gt; = remove commit</pre>
+    </div>
+    <p class="konsola-opis">Zamykasz plik, a git wykonuje to, co w nim zostawiłeś. Pusty plik oznacza „nie rób nic” — i tak się przerywa rebase, którego się rozmyśliłeś.</p>
+
+    <p>Zwróć uwagę na kolejność: <strong>od najstarszego do najnowszego</strong>, czyli odwrotnie niż w <code>git log</code>. To najczęstsze źródło pomyłki przy pierwszych próbach, bo „scal z poprzednim” znaczy „z tym, który jest wyżej na liście”, a nie „z tym, który jest wyżej w logu”.</p>
+
+    <p>Argument <code>HEAD~2</code> nie mówi „przepisz dwa commity”, tylko <strong>„zacznij od tego miejsca”</strong>. To punkt, od którego historia zostanie zbudowana od nowa; wszystko poniżej niego pozostaje nietknięte. Dlatego jeśli chcesz poprawić commit sprzed pięciu innych, musisz podać <code>HEAD~5</code> — i wszystkie pięć zostanie przebudowanych, choć zmieniasz jeden.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Mechanizm · to jest ciąg amendów</div>
+    <h2>Git odtwarza commity, jeden po drugim</h2>
+
+    <p>Rebase robi dokładnie to samo co Rozdział 13, tylko wielokrotnie. Ustawia się na commicie bazowym, bierze pierwszy commit z listy, buduje jego <strong>nową kopię</strong> na bieżącym szczycie, przechodzi do następnego i powtarza.</p>
+
+    <div class="gitviz" data-git-scenario="rebase">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Rebase buduje kopie, nie przenosi oryginałów</p>
+        <p class="gitviz__sub">Jeden krok. Porównaj skrót przed i po.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — mechanizm opisuje tekst obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="merge">git merge master</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Stary commit zostaje na rysunku przygaszony — nadal jest na dysku i nadal jest w reflogu.</p>
+    </div>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>lista zadan &#8594; nowe commity</span><span>squash trzech w dwa</span></div>
+      <svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Lista poleceń rebase po lewej, powstałe z niej commity po prawej">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="24" font-size="10.5" fill="#8b909b" letter-spacing="1">LISTA ZADAN</text>
+          <rect x="14" y="36" width="228" height="26" rx="5" fill="#20242c" stroke="#2a2f38"/>
+          <text x="26" y="54" font-size="11" fill="#ecebe4">pick <tspan fill="#8b909b">a5a32af  Dodaj eksporter</tspan></text>
+          <rect x="14" y="68" width="228" height="26" rx="5" fill="#20242c" stroke="#9c82d8"/>
+          <text x="26" y="86" font-size="11" fill="#9c82d8">fixup <tspan fill="#8b909b">e72b434  literowka</tspan></text>
+          <rect x="14" y="100" width="228" height="26" rx="5" fill="#20242c" stroke="#9c82d8"/>
+          <text x="26" y="118" font-size="11" fill="#9c82d8">reword <tspan fill="#8b909b">c31a0d9  Testy</tspan></text>
+
+          <path d="M 250 82 L 300 82" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 293 77 L 303 82 L 293 87 Z" fill="#2a2f38"/>
+          <text x="275" y="72" text-anchor="middle" font-size="9.5" fill="#8b909b">git</text>
+
+          <text x="316" y="24" font-size="10.5" fill="#8b909b" letter-spacing="1">WYNIK</text>
+          <circle cx="348" cy="82" r="22" fill="#1b1e24" stroke="#8b909b" stroke-width="2" opacity="0.5"/>
+          <text x="348" y="86" text-anchor="middle" font-size="9.5" fill="#8b909b">e0cffc1</text>
+          <text x="348" y="118" text-anchor="middle" font-size="9" fill="#8b909b">baza</text>
+
+          <path d="M 442 82 L 376 82" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 383 77 L 373 82 L 383 87 Z" fill="#2a2f38"/>
+          <circle cx="466" cy="82" r="22" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="466" y="86" text-anchor="middle" font-size="9.5" fill="#e8a33d">4f1b8c2</text>
+          <text x="466" y="118" text-anchor="middle" font-size="9" fill="#8b909b">dwa w jednym</text>
+
+          <path d="M 560 82 L 494 82" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 501 77 L 491 82 L 501 87 Z" fill="#2a2f38"/>
+          <circle cx="584" cy="82" r="22" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="584" y="86" text-anchor="middle" font-size="9.5" fill="#e8a33d">9ad30ee</text>
+          <text x="584" y="118" text-anchor="middle" font-size="9" fill="#8b909b">nowy opis</text>
+
+          <text x="14" y="166" font-size="10.5" fill="#8b909b">Trzy commity weszly, dwa wyszly. Zaden z wyjsciowych skrotow sie nie powtarza,</text>
+          <text x="14" y="184" font-size="10.5" fill="#8b909b">bo kazdy commit ma teraz innego rodzica niz mial.</text>
+          <text x="14" y="210" font-size="10.5" fill="#9c82d8">fioletem &#8212; polecenia, ktore zmieniaja tresc albo liczbe commitow</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Lista jest wejściem, commity są wyjściem. Nic po lewej nie zostaje zmodyfikowane.</div>
+    </div>
+
+    <p>Ponieważ każda kopia ma innego rodzica niż oryginał, ma też inny skrót — a skoro tak, to <strong>każdy commit powyżej też musi zostać zbudowany od nowa</strong>, bo w jego treści siedzi skrót rodzica. Stąd zdanie, które warto zapamiętać: rebase przepisuje wszystko od punktu startowego w górę, niezależnie od tego, ile commitów naprawdę zmieniasz.</p>
+
+    <p>Konflikty w trakcie rebase'u nie są awarią, tylko zwykłą konsekwencją tego, że commit budowany jest na innej podstawie niż powstał. Git zatrzymuje się, prosi o rozstrzygnięcie i czeka na <code>git rebase --continue</code>. Zawsze dostępne jest też <code>git rebase --abort</code>, które przywraca stan sprzed rozpoczęcia — dosłownie, bo gałąź wraca na stary skrót, a wszystkie zbudowane po drodze kopie zostają bez wskaźnika.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zastosowania · po co to komu</div>
+    <h2>Cztery polecenia, które wystarczą</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Polecenie</th><th>Co robi</th><th>Kiedy</th></tr></thead>
+        <tbody>
+          <tr><td>reword</td><td>Buduje commit z nową wiadomością</td><td>Literówka albo brak prefiksu w opisie starszego commita</td></tr>
+          <tr><td>squash</td><td>Scala z poprzednim, pyta o wspólny opis</td><td>Dwa commity, które są jedną zmianą</td></tr>
+          <tr><td>fixup</td><td>Jak squash, ale wyrzuca opis scalanego</td><td>Commit „poprawka do poprzedniego”, którego nikt nie chce widzieć</td></tr>
+          <tr><td>drop</td><td>Pomija commit przy odtwarzaniu</td><td>Zmiana, która okazała się niepotrzebna</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Usunięcie linii z listy działa tak samo jak <code>drop</code> — polecenie istnieje po to, żeby decyzja była widoczna.</p>
+
+    <p>Najczęstszy realny scenariusz wygląda tak: gałąź ma cztery commity, z czego dwa to „poprawka po recenzji” i „literówka”. Przed scaleniem chcesz, żeby została jedna czysta zmiana. Ustawiasz <code>fixup</code> przy tych dwóch, zamykasz plik i gałąź ma dwa commity zamiast czterech.</p>
+
+    <p>Drugi częsty powód to porządek przed recenzją. Historia, w której widać „dodaj funkcję”, „napraw test”, „napraw test naprawdę”, opowiada o Twoim popołudniu, a nie o zmianie w projekcie. Recenzent czyta ją commit po commicie, więc każdy zbędny krok kosztuje go uwagę. Rebase pozwala oddać to, co powinno zostać w historii, zamiast tego, co się po drodze wydarzyło.</p>
+
+    <p>Jest na to jeszcze wygodniejsza droga, o której mało kto wie: przy commitowaniu poprawki użyj <code>git commit --fixup &lt;sha&gt;</code>, a potem <code>git rebase -i --autosquash</code>. Git sam ustawi te commity we właściwych miejscach z poleceniem <code>fixup</code> — nie musisz przestawiać niczego ręcznie.</p>
+
+    <div class="uwaga">
+      <div class="panel-label">Zanim zaczniesz</div>
+      <p>Rebase przepisuje historię, więc obowiązują te same granice co przy amendzie: własna gałąź funkcyjna — tak; gałąź chroniona albo taka, na której ktoś oparł swoją pracę — nie. Jeśli nie jesteś pewien, gdzie stoisz, Rozdział 17 zawiera listę pytań, na które trzeba odpowiedzieć twierdząco, zanim wymusisz push.</p>
+    </div>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Zanim uruchomisz rebase na gałęzi, na której Ci zależy, zanotuj sobie gdzieś bieżący skrót: <code>git rev-parse HEAD</code>. Nie dlatego, że rebase jest niebezpieczny — jest odwracalny — tylko dlatego, że w razie pomyłki nie będziesz musiał niczego szukać w reflogu. <code>git reset --hard &lt;ten skrót&gt;</code> przywraca stan sprzed operacji.</p>
+    <p>Jeśli rebase zatrzymał się na konflikcie i nie wiesz, w którym miejscu listy jesteś, <code>git status</code> odpowie: podaje numer kroku, nazwę commita i podpowiada trzy dostępne wyjścia (continue, skip, abort).</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>todo list</dt><dd>Plik z listą poleceń rebase'u. Wykonywany od góry, czyli od najstarszego commita.</dd>
+      <dt>squash / fixup</dt><dd>Scalenie commita z poprzednim. Różnią się tylko losem wiadomości scalanego commita.</dd>
+      <dt>autosquash</dt><dd>Tryb, w którym git sam układa commity oznaczone jako <code>fixup!</code> i <code>squash!</code> we właściwych miejscach listy.</dd>
+      <dt>--abort</dt><dd>Przerwanie rebase'u i powrót do stanu sprzed. Zawsze dostępne, dopóki operacja trwa.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Amend i rebase budują nowe commity. Następny rozdział zajmuje się komendami, które budują mniej albo nic — i porządkuje trzy słowa, które w rozmowie brzmią tak samo: <code>reset</code>, <code>restore</code> i <code>revert</code>.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +205,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

@@ -30,7 +30,161 @@
   <h1>Fast-forward i anatomia odrzuconego pusha</h1>
   <p class="subtitle">Zwykły push przechodzi tylko wtedy, gdy nowy commit jest potomkiem tego, który leży na serwerze. Cała reszta komunikatu o odrzuceniu to szczegóły tego jednego zdania.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Zwykły push przechodzi tylko wtedy, gdy commit leżący na serwerze jest <strong>przodkiem</strong> tego, który wysyłasz. Wtedy ref przesuwa się wzdłuż istniejącego łańcucha i nic nie ginie.</li>
+      <li>Odmowa <code>non-fast-forward</code> znaczy dokładnie jedno: <strong>rozjechaliście się</strong>. Ty masz commity, których nie ma serwer, a serwer ma takie, których nie masz Ty.</li>
+      <li>Podpowiedź, którą git dopisuje do odmowy, dotyczy najczęstszej przyczyny, a nie zawsze Twojej. Zanim ją wykonasz, sprawdź jedną komendą, po której stronie co leży.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Warunek · jedno zdanie, cały mechanizm</div>
+    <h2>Przewinięcie do przodu</h2>
+
+    <p><span class="term-serwer">Serwer</span> nie zna Twoich intencji. Kiedy prosisz go o zmianę wartości refa, ma do dyspozycji jedno pytanie, na które da się odpowiedzieć bez zgadywania: <em>czy to, co u mnie leży, jest przodkiem tego, co przysyłasz?</em></p>
+
+    <p>Jeśli tak, to znaczy, że nowa wartość zawiera w sobie starą — cała dotychczasowa historia jest częścią nowej. Przesunięcie refa niczego nie usuwa, więc git zgadza się bez pytania. To jest <span class="term-ref">fast-forward</span>: przewinięcie wskaźnika po istniejącym łańcuchu.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>dwa przypadki</span><span>zgoda i odmowa</span></div>
+      <svg viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="U góry przypadek fast-forward, u dołu rozjazd kończący się odmową">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="22" font-size="10.5" fill="#4fc3c0" letter-spacing="1">PRZECHODZI &#183; POTOMEK</text>
+          <path d="M 122 56 L 78 56" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 85 51 L 75 56 L 85 61 Z" fill="#2a2f38"/>
+          <path d="M 222 56 L 178 56" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 185 51 L 175 56 L 185 61 Z" fill="#2a2f38"/>
+          <circle cx="52" cy="56" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="152" cy="56" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="252" cy="56" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="152" y="96" text-anchor="middle" font-size="9.5" fill="#6e93be">origin</text>
+          <text x="252" y="96" text-anchor="middle" font-size="9.5" fill="#4fc3c0">HEAD</text>
+          <text x="300" y="52" font-size="10.5" fill="#8b909b">commit na serwerze LEZY NA drodze</text>
+          <text x="300" y="70" font-size="10.5" fill="#8b909b">do mojego &#8212; ref przesuwa sie po lancuchu</text>
+
+          <line x1="14" y1="124" x2="606" y2="124" stroke="#2a2f38" stroke-dasharray="3 5"/>
+
+          <text x="14" y="152" font-size="10.5" fill="#d2685a" letter-spacing="1">ODMOWA &#183; RODZENSTWO</text>
+          <path d="M 122 186 L 78 186" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 85 181 L 75 186 L 85 191 Z" fill="#2a2f38"/>
+          <path d="M 222 164 C 194 164, 186 186, 172 186" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 179 181 L 169 186 L 179 191 Z" fill="#2a2f38"/>
+          <path d="M 222 214 C 194 214, 186 186, 172 186" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 179 181 L 169 186 L 179 191 Z" fill="#2a2f38"/>
+          <circle cx="52" cy="186" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="152" cy="186" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="252" cy="164" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="252" cy="214" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="290" y="168" font-size="9.5" fill="#4fc3c0">HEAD</text>
+          <text x="290" y="218" font-size="9.5" fill="#6e93be">origin</text>
+          <text x="360" y="182" font-size="10.5" fill="#8b909b">zaden nie lezy na drodze do drugiego</text>
+          <text x="360" y="200" font-size="10.5" fill="#8b909b">&#8212; przesuniecie refa cos by porzucilo</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ten sam wskaźnik, ta sama komenda. Różni je wyłącznie kształt grafu.</div>
+    </div>
+
+    <p>Jeśli nie, to obie wersje są rodzeństwem, a przestawienie refa oznaczałoby, że commity serwera przestają być przez cokolwiek wskazywane. Git odmawia — nie dlatego, że to niemożliwe, tylko dlatego, że nie ma podstaw, by uznać to za Twoją intencję.</p>
+
+    <div class="gitviz" data-git-scenario="fastForward">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Push, który przechodzi, i ten sam push po cofnięciu gałęzi</p>
+        <p class="gitviz__sub">Cztery kroki. Dwa pierwsze kończą się zgodą, dwa ostatnie odmową.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — oba przypadki są opisane w tekście.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="commit">git commit</button>
+        <button data-git-op="push">git push</button>
+        <button data-git-op="pushForce">git push --force-with-lease</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Warunek dotyczy pokrewieństwa commitów, nie tego, ile ich jest ani jak są nowe.</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Diagnoza · po której stronie co leży</div>
+    <h2>Jedna komenda zamiast zgadywania</h2>
+
+    <p>Komunikat odmowy mówi, że push się nie udał, ale nie mówi, dlaczego akurat u Ciebie. Przyczyny są dwie i wymagają zupełnie różnych reakcji: albo ktoś dołożył commity na serwerze, albo <strong>Ty przepisałeś historię</strong> u siebie. Rozróżnia je jedna komenda:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git rev-list --left-right --count HEAD...@{upstream}</span><span>trzy kropki, nie dwie</span></div>
+<pre><span class="cmd">git rev-list --left-right --count HEAD...@{upstream}</span>
+1       1        <span class="komentarz">&#8592; 1 commit u mnie, 1 na serwerze, wspolny rodzic</span>
+
+<span class="cmd">git status -sb</span>
+## ABC-1234...origin/ABC-1234 [ahead 1, behind 1]</pre>
+    </div>
+    <p class="konsola-opis">Ta sama informacja w dwóch postaciach. „ahead” to Twoje commity, „behind” to te, których nie masz.</p>
+
+    <p>Czytaj to tak:</p>
+
+    <ul class="compact">
+      <li><strong>ahead N, behind 0</strong> — jesteś do przodu, push przejdzie. Jeśli nie przechodzi, problem jest gdzie indziej: uprawnienia, hook, chroniona gałąź.</li>
+      <li><strong>ahead 0, behind N</strong> — masz zaległości, ale nic własnego. Wystarczy <code>git pull</code> i push nie będzie potrzebny.</li>
+      <li><strong>ahead N, behind M</strong> — rozjazd. Trzeba zdecydować, co zrobić z obiema stronami: scalić, przepisać albo wymusić.</li>
+    </ul>
+
+    <p>Szczególnie warto zwrócić uwagę na trzeci przypadek z <strong>M równym liczbie commitów, które właśnie przepisałeś</strong>. Jeżeli po amendzie widzisz <code>1 1</code>, a wiesz, że nikt inny na tej gałęzi nie pracuje, to „behind 1” nie oznacza cudzej pracy — to Twój własny commit sprzed poprawki. Wtedy odpowiedzią jest wymuszony push, a nie pull.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pułapka · podpowiedź, która bywa myląca</div>
+    <h2>Dlaczego <code>git pull</code> nie zawsze jest odpowiedzią</h2>
+
+    <p>Do odmowy git dopisuje podpowiedź: <em>„Updates were rejected because the tip of your current branch is behind its remote counterpart. If you want to integrate the remote changes, use <code>git pull</code> before pushing again.”</em> Dla najczęstszej przyczyny — kolega wypchnął coś przed Tobą — jest to rada trafna.</p>
+
+    <p>Jeśli jednak rozjazd wziął się z Twojego amendu albo rebase'u, <code>git pull</code> jest ruchem najgorszym z możliwych. Ściągnie z powrotem commit sprzed poprawki i scali go z poprawionym, więc <strong>w historii wylądują oba</strong>: ten z literówką i ten bez. Dokładnie to, czego chciałeś uniknąć, plus commit scalający.</p>
+
+    <p>Reguła jest prosta i warto ją mieć odruchowo: <em>zanim wykonasz podpowiedź, sprawdź, czy „behind” to cudza praca, czy Twoja własna sprzed przepisania</em>. Pierwsza wymaga pobrania. Druga wymaga wymuszenia — o czym jest następny rozdział.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Domyślnie · gdzie właściwie leci ten push</div>
+    <h2>Co znaczy samo <code>git push</code></h2>
+
+    <p>Push bez argumentów wygląda na komendę bez treści, a w rzeczywistości niesie komplet informacji — tyle że wziętych z konfiguracji. Rozwinięta wersja tego, co się dzieje, to <code>git push origin ABC-1234:ABC-1234</code>: nazwa zdalnego repozytorium, źródło i cel.</p>
+
+    <p>Zapis ze dwukropkiem nazywa się <strong>refspec</strong> i mówi: weź mój ref po lewej i ustaw nim ref po prawej. Dwie strony mogą się różnić, choć w praktyce prawie nigdy tego nie robisz. Skąd git bierze te wartości, gdy ich nie podajesz, opisuje Rozdział 8 — to jest właśnie upstream zapisany w lokalnej konfiguracji.</p>
+
+    <p>Warto zdawać sobie z tego sprawę z jednego powodu: kiedy komunikat mówi <code>ABC-1234 -&gt; ABC-1234</code>, nie powtarza się bez sensu. Po lewej jest to, co wysyłasz, po prawej — co ma zostać ustawione po drugiej stronie. Ta sama para pojawia się w każdej odmowie i w każdym potwierdzeniu, więc warto ją czytać jako parę, a nie jako ozdobnik.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>W interfejsie IDE odmowa zwykle pojawia się jako okienko z propozycją „Merge”, „Rebase” albo „Force push”. Wybór w tym okienku jest dokładnie tą samą decyzją co powyżej, tylko postawioną wtedy, kiedy najtrudniej ją podjąć — w pośpiechu i bez patrzenia na graf. Warto zamknąć okienko, sprawdzić <code>git status -sb</code>, i dopiero potem wrócić.</p>
+    <p>Jeśli po pobraniu chcesz uniknąć commita scalającego przy zwykłym nadrabianiu zaległości, ustaw sobie <code>git config --global pull.rebase true</code>. Wtedy <code>pull</code> dokłada Twoje commity na szczyt pobranych zamiast je scalać. Więcej w Dodatku B.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>fast-forward</dt><dd>Przesunięcie refa wzdłuż istniejącego łańcucha. Nic nie powstaje i nic nie przestaje być wskazywane.</dd>
+      <dt>non-fast-forward</dt><dd>Odmowa: wysyłany commit nie jest potomkiem tego, który leży po drugiej stronie.</dd>
+      <dt>upstream, @{upstream}</dt><dd>Gałąź zdalna skojarzona z bieżącą. Skrót <code>@{u}</code> działa wszędzie tam, gdzie można podać commit.</dd>
+      <dt>ahead / behind</dt><dd>Ile commitów masz ponad wspólny punkt i ile ma ich druga strona.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Wiesz już, kiedy git odmawia i dlaczego. Następny rozdział jest o komendzie, która tę odmowę omija — o tym, czym różnią się jej dwa warianty i gdzie przebiega granica, za którą wymuszenie przestaje być Twoją prywatną sprawą.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +196,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

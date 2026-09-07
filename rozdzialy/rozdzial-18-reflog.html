@@ -30,7 +30,140 @@
   <h1>reflog: siatka bezpieczeństwa, o której się zapomina</h1>
   <p class="subtitle">Commit, do którego nie prowadzi żadna gałąź, nie znika. Leży na dysku, a git pamięta, gdzie był HEAD — domyślnie przez trzydzieści dni.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Reflog to dziennik <strong>ruchów HEAD i gałęzi</strong> — zupełnie osobna rzecz niż historia commitów. Zapisuje każde przestawienie wskaźnika, także takie, po którym commit stracił gałąź.</li>
+      <li>Dzięki temu prawie nic w gicie nie ginie. Nieudany rebase, przypadkowy <code>reset --hard</code>, nadpisany amend — wszystkie zostawiają w reflogu skrót, na który da się wrócić.</li>
+      <li>Dwa ograniczenia: reflog jest <strong>wyłącznie lokalny</strong> i ma termin ważności (domyślnie około trzydziestu dni dla wpisów osiągalnych, dziewięćdziesiąt dla reszty).</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Czym to jest · nie historia, tylko dziennik</div>
+    <h2>Zapis tego, gdzie bywał HEAD</h2>
+
+    <p><code>git log</code> odpowiada na pytanie „jak powstał ten commit” — idzie po wskaźnikach rodziców i pokazuje historię <em>zawartą w commicie</em>. <code>git reflog</code> odpowiada na zupełnie inne pytanie: <strong>„co ja właściwie robiłem”</strong>. Jest listą kolejnych wartości, jakie przyjmował HEAD, w porządku czasowym.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git reflog</span><span>po amendzie i przełączeniu gałęzi</span></div>
+<pre><span class="cmd">git reflog -4</span>
+<span class="sha">407463b</span> HEAD@{0}: commit (amend): [ABC-1234] Dodaj wyszukiwarke
+<span class="sha">7fbdb3e</span> HEAD@{1}: commit: odaj wyszukiwarke
+<span class="sha">f0bae61</span> HEAD@{2}: checkout: moving from master to ABC-1234
+<span class="sha">f0bae61</span> HEAD@{3}: commit (initial): Konfiguracja projektu</pre>
+    </div>
+    <p class="konsola-opis">Wpis <code>HEAD@{1}</code> to commit, którego <code>git log</code> już nie pokaże — nie ma do niego żadnej gałęzi.</p>
+
+    <p>Zwróć uwagę na trzy rzeczy w tym wypisie. Po pierwsze, <strong>każda linia niesie skrót</strong> — a skrót wystarcza, żeby wrócić. Po drugie, git dopisuje przy każdym wpisie, co go spowodowało: <code>commit</code>, <code>checkout</code>, <code>reset</code>, <code>rebase</code>. Po trzecie, ten sam skrót może się powtórzyć, bo przełączenie gałęzi jest ruchem HEAD, choć nie tworzy niczego nowego.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>log kontra reflog</span><span>dwa rozne przejscia</span></div>
+      <svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Log idzie po rodzicach, reflog po kolejnych wartościach HEAD w czasie">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="22" font-size="10.5" fill="#e8a33d" letter-spacing="1">GIT LOG &#183; PO RODZICACH</text>
+          <path d="M 122 62 L 78 62" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 85 57 L 75 62 L 85 67 Z" fill="#2a2f38"/>
+          <path d="M 222 62 L 178 62" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 185 57 L 175 62 L 185 67 Z" fill="#2a2f38"/>
+          <circle cx="52" cy="62" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="52" y="66" text-anchor="middle" font-size="9" fill="#e8a33d">f0bae61</text>
+          <circle cx="152" cy="62" r="19" fill="#1b1e24" stroke="#8b909b" stroke-width="2" opacity="0.45"/>
+          <text x="152" y="66" text-anchor="middle" font-size="9" fill="#8b909b">7fbdb3e</text>
+          <circle cx="252" cy="62" r="19" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="252" y="66" text-anchor="middle" font-size="9" fill="#e8a33d">407463b</text>
+          <text x="300" y="58" font-size="10.5" fill="#8b909b">log widzi tylko f0bae61 i 407463b &#8212;</text>
+          <text x="300" y="76" font-size="10.5" fill="#8b909b">7fbdb3e nie lezy na drodze rodzicow</text>
+
+          <line x1="14" y1="112" x2="606" y2="112" stroke="#2a2f38" stroke-dasharray="3 5"/>
+
+          <text x="14" y="142" font-size="10.5" fill="#4fc3c0" letter-spacing="1">GIT REFLOG &#183; PO CZASIE</text>
+          <rect x="14" y="156" width="120" height="26" rx="5" fill="#20242c" stroke="#2a2f38"/>
+          <text x="26" y="174" font-size="10" fill="#8b909b">@{3} f0bae61</text>
+          <rect x="146" y="156" width="120" height="26" rx="5" fill="#20242c" stroke="#2a2f38"/>
+          <text x="158" y="174" font-size="10" fill="#8b909b">@{2} f0bae61</text>
+          <rect x="278" y="156" width="120" height="26" rx="5" fill="#20242c" stroke="#4fc3c0"/>
+          <text x="290" y="174" font-size="10" fill="#4fc3c0">@{1} 7fbdb3e</text>
+          <rect x="410" y="156" width="120" height="26" rx="5" fill="#20242c" stroke="#2a2f38"/>
+          <text x="422" y="174" font-size="10" fill="#8b909b">@{0} 407463b</text>
+          <text x="14" y="208" font-size="10.5" fill="#8b909b">reflog widzi WSZYSTKO, na czym stal HEAD &#8212; w tym commit porzucony przez amend</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ten sam moment w repozytorium, dwa różne sposoby przejścia. Tylko jeden pokazuje porzucony commit.</div>
+    </div>
+
+    <p>Ta różnica tłumaczy, dlaczego reflog bywa niewidoczny w interfejsach graficznych. Panel historii w IDE rysuje graf commitów, czyli robi to samo co <code>log</code> — a porzucony commit z definicji nie leży w tym grafie. Bywa, że dostęp do reflogu jest w menu pod nazwą w rodzaju „Recent operations”, ale równie często nie ma go wcale i wtedy jedynym wyjściem jest terminal.</p>
+
+    <p>Zapis <code>HEAD@{n}</code> działa wszędzie tam, gdzie można podać commit. <code>git show HEAD@{2}</code>, <code>git diff HEAD@{5}</code>, <code>git reset --hard HEAD@{1}</code> — wszystkie są poprawne. Jest też wariant czasowy: <code>HEAD@{2.days.ago}</code> albo <code>HEAD@{yesterday}</code>.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zastosowanie · powrót po nieudanej operacji</div>
+    <h2>Dwie komendy, żeby cofnąć wszystko</h2>
+
+    <p>Cały ratunek sprowadza się do dwóch kroków: znajdź w reflogu skrót sprzed operacji, przestaw na niego gałąź. Widget pokazuje ten drugi krok — zwróć uwagę, że nie jest to żadna specjalna komenda naprawcza, tylko zwykły <code>reset</code> z Rozdziału 15.</p>
+
+    <div class="gitviz" data-git-scenario="reflog">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Praca „zniknęła” i wróciła</p>
+        <p class="gitviz__sub">Dwa kroki: reset o dwa commity wstecz, potem powrót na skrót z reflogu.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — obie komendy są w tekście obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Po pierwszym kroku commity nie znikają z rysunku — bledną. To jest dokładnie ta różnica, którą reflog pozwala odwrócić.</p>
+    </div>
+
+    <p>W praktyce wygląda to tak. Zrobiłeś rebase, wynik jest nie do poznania, chcesz wrócić. Wpisujesz <code>git reflog</code>, szukasz ostatniego wpisu <em>sprzed</em> rebase'u — będzie tuż nad linią z <code>rebase (start)</code> — i wykonujesz <code>git reset --hard</code> na jego skrót. Gałąź wraca dokładnie tam, gdzie była, razem ze wszystkimi commitami.</p>
+
+    <p>Jest też skrót dla przypadku najczęstszego: <strong>każda gałąź ma własny reflog</strong>. <code>git reflog ABC-1234</code> pokazuje ruchy tylko tej gałęzi, a <code>ABC-1234@{1}</code> oznacza jej poprzednią wartość. Po nieudanej operacji na jednej gałęzi to zwykle najkrótsza droga: <code>git reset --hard ABC-1234@{1}</code>.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Granice · czego reflog nie zrobi</div>
+    <h2>Lokalny i z terminem ważności</h2>
+
+    <p>Reflog jest <strong>wyłącznie Twój</strong>. Nie jest wysyłany przy pushu, nie przychodzi przy klonowaniu, nie ma go w świeżym klonie repozytorium. Serwer prowadzi własny, ale nie masz do niego dostępu zwykłymi komendami — więc jeśli praca zniknęła u Ciebie, ratunek jest na Twoim dysku albo nigdzie.</p>
+
+    <p>Ma też termin ważności. Wpisy wygasają — domyślnie po trzydziestu dniach dla commitów nadal osiągalnych i po dziewięćdziesięciu dla porzuconych — a sprzątanie (<code>git gc</code>) usuwa wtedy obiekty, do których nic już nie prowadzi. W codziennej pracy to wieczność, ale przy powrocie do repozytorium po pół roku reflog będzie miał niewiele do zaoferowania.</p>
+
+    <p>Jest wreszcie jedna rzecz, której reflog nie obejmuje, i warto ją znać, bo to najczęstsza realna strata: <strong>zmiany, które nigdy nie były commitem</strong>. Reflog zapisuje ruchy wskaźników, a wskaźnik może wskazywać tylko na obiekt. Plik zmieniony w edytorze i wyrzucony przez <code>reset --hard</code> nigdy nie stał się obiektem, więc nie ma czego przywracać. To jest jedyne miejsce w całej tej książce, w którym praca naprawdę przepada.</p>
+
+    <p>Wynika stąd jedna praktyczna zasada, wbrew pozorom nietrywialna: <strong>jeśli coś poszło nie tak, nie klonuj repozytorium od nowa</strong>. Świeży klon wygląda na czysty start, ale przy okazji zostawia za sobą jedyny egzemplarz reflogu, w którym są Twoje porzucone commity. Napraw najpierw to, co masz.</p>
+
+    <p>Gdy reflog nie wystarcza, zostaje jeszcze <code>git fsck --lost-found</code>, które wypisuje wszystkie obiekty nieosiągalne z żadnego refa. Jest to narzędzie ostatniej szansy — wypis bywa długi i bez opisów — ale jeżeli commit istnieje, znajdzie się tam.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Najlepszy moment na spojrzenie w reflog to nie chwila paniki, tylko pięć minut spokoju. Uruchom <code>git reflog</code> na repozytorium, w którym pracowałeś przez ostatni tydzień, i przeczytaj kilkanaście linii. Zobaczysz swoją własną pracę opisaną komendami gita — i następnym razem, kiedy coś pójdzie nie tak, będziesz wiedział, czego szukać zamiast czytać ten wypis pierwszy raz w życiu.</p>
+    <p>Warto też zapamiętać jedno zdanie i powtarzać je sobie w gorszych momentach: <em>dopóki commit powstał, jest na dysku</em>. Nie ma znaczenia, że <code>git log</code> go nie pokazuje, że gałąź zniknęła ani że IDE twierdzi, że nic tam nie ma.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>reflog</dt><dd>Dziennik kolejnych wartości refa. Osobny dla HEAD i dla każdej gałęzi.</dd>
+      <dt>HEAD@{n}</dt><dd>Wartość HEAD sprzed n ruchów. Działa jak zwykły skrót commita.</dd>
+      <dt>gc (garbage collection)</dt><dd>Sprzątanie: pakuje obiekty i usuwa te nieosiągalne, którym minął termin.</dd>
+      <dt>fsck --lost-found</dt><dd>Wypis obiektów, do których nie prowadzi żaden ref. Ostatnia deska ratunku.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Ostatni rozdział tej części zbiera trzy drobne narzędzia, po które sięga się rzadko i zwykle w pośpiechu — a każde z nich da się opisać jednym zdaniem o tym, co robi z grafem.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +175,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

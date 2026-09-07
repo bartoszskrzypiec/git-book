@@ -30,7 +30,158 @@
   <h1>reset, restore, revert — tabela decyzyjna</h1>
   <p class="subtitle">Trzy komendy, które w potocznym języku nazywa się tak samo: „cofnij”. Różnią się tym, które z trzech drzew ruszają — i czy zostawiają ślad w historii.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Trzy komendy, które po polsku nazywa się tak samo — „cofnij” — robią trzy różne rzeczy. Różnią się tym, <strong>które z trzech drzew ruszają</strong>.</li>
+      <li><code>reset</code> przesuwa gałąź. <code>restore</code> zmienia pliki. <code>revert</code> dopisuje nowy commit odwracający zmianę.</li>
+      <li>Kryterium wyboru jest jedno i nie dotyczy techniki: <strong>czy ten commit ktoś już widział</strong>. Jeśli tak — <code>revert</code>. Jeśli nie — masz wolną rękę.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Uporządkowanie · co która komenda dotyka</div>
+    <h2>Trzy komendy, trzy zasięgi</h2>
+
+    <p>Wróćmy do rysunku z Rozdziału 1: katalog roboczy, index, HEAD. Każda z trzech komend działa na innym wycinku tego układu i to jest cała różnica między nimi.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>zasieg komend</span><span>ktore drzewo rusza sie</span></div>
+      <svg viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zakresy działania reset --soft, --mixed, --hard oraz restore i revert">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="60" y="30" text-anchor="middle" font-size="10.5" fill="#8b909b">katalog</text>
+          <text x="240" y="30" text-anchor="middle" font-size="10.5" fill="#8b909b">index</text>
+          <text x="420" y="30" text-anchor="middle" font-size="10.5" fill="#8b909b">HEAD / galaz</text>
+
+          <line x1="60" y1="40" x2="60" y2="240" stroke="#2a2f38" stroke-dasharray="3 4"/>
+          <line x1="240" y1="40" x2="240" y2="240" stroke="#2a2f38" stroke-dasharray="3 4"/>
+          <line x1="420" y1="40" x2="420" y2="240" stroke="#2a2f38" stroke-dasharray="3 4"/>
+
+          <rect x="400" y="52" width="40" height="26" rx="6" fill="#9c82d8" opacity="0.25"/>
+          <text x="470" y="70" font-size="11" fill="#9c82d8">reset --soft</text>
+          <text x="470" y="86" font-size="9.5" fill="#8b909b">tylko galaz; zmiany zostaja w indeksie</text>
+
+          <rect x="220" y="108" width="220" height="26" rx="6" fill="#9c82d8" opacity="0.25"/>
+          <text x="470" y="126" font-size="11" fill="#9c82d8">reset --mixed</text>
+          <text x="470" y="142" font-size="9.5" fill="#8b909b">domyslny; czysci tez index</text>
+
+          <rect x="40" y="164" width="400" height="26" rx="6" fill="#d2685a" opacity="0.25"/>
+          <text x="470" y="182" font-size="11" fill="#d2685a">reset --hard</text>
+          <text x="470" y="198" font-size="9.5" fill="#8b909b">nadpisuje takze pliki na dysku</text>
+
+          <rect x="40" y="220" width="40" height="26" rx="6" fill="#4fc3c0" opacity="0.25"/>
+          <text x="470" y="238" font-size="11" fill="#4fc3c0">restore</text>
+          <text x="140" y="238" font-size="9.5" fill="#8b909b">tylko wskazane pliki</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Im szersze pole, tym więcej może zginąć. Tylko <code>--hard</code> dotyka niezapisanej pracy.</div>
+    </div>
+
+    <p>Kluczowa obserwacja: <strong>tylko <code>reset --hard</code> potrafi coś nieodwracalnie stracić</strong>, i to nie commity, tylko zmiany, których nigdy nie zacommitowałeś. Commity są bezpieczne, bo zostają w reflogu. Plik, który zmieniłeś i nie dodałeś, nie ma gdzie zostać — nie istnieje żaden obiekt z jego treścią.</p>
+
+    <p>Różnicę między trybami widać w statusie od razu. Po <code>reset --soft HEAD~1</code> zmiana czeka w indeksie, gotowa do ponownego commita, po <code>--mixed</code> leży już tylko na dysku:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git status --short</span><span>po dwóch trybach resetu</span></div>
+<pre><span class="cmd">git reset --soft HEAD~1 &amp;&amp; git status --short</span>
+M  plik.txt        <span class="komentarz">&#8592; litera w PIERWSZEJ kolumnie: w indeksie</span>
+
+<span class="cmd">git reset --mixed HEAD &amp;&amp; git status --short</span>
+ M plik.txt        <span class="komentarz">&#8592; litera w DRUGIEJ kolumnie: tylko na dysku</span></pre>
+    </div>
+    <p class="konsola-opis">Dwie kolumny statusu to dokładnie dwa porównania z Rozdziału 1: index kontra HEAD i katalog kontra index.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Reset · to jest przesunięcie karteczki</div>
+    <h2>Nic nie zostaje usunięte</h2>
+
+    <p>Nazwa „reset” sugeruje kasowanie i to jest jej największa wada. W rzeczywistości <code>git reset</code> robi to samo, co robi każdy commit — <strong>nadpisuje czterdzieści bajtów w pliku gałęzi</strong> — tylko wskazuje przy tym wstecz zamiast do przodu.</p>
+
+    <div class="gitviz" data-git-scenario="reset">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Reset przesuwa gałąź</p>
+        <p class="gitviz__sub">Jeden krok. Patrz, czy któryś węzeł znika z rysunku.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — mechanizm opisuje tekst obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="revert">git revert HEAD</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Commit przestaje być wskazywany i blednie, ale zostaje. Przycisk obok pokazuje wariant, który niczego nie porzuca.</p>
+    </div>
+
+    <p>Skoro reset tylko przesuwa wskaźnik, to działa też w drugą stronę: <code>git reset --hard &lt;stary-skrót&gt;</code> przywraca gałąź dokładnie tam, gdzie była. Cały Rozdział 18 jest o tym, skąd wziąć ten skrót, gdy się go już nie pamięta.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Revert · jedyna opcja, gdy commit wyjechał</div>
+    <h2>Historia rosnąca do przodu</h2>
+
+    <p><code>git revert</code> nie rusza niczego, co już istnieje. Liczy zmianę odwrotną do wskazanego commita i <strong>dopisuje ją jako nowy commit</strong> na szczycie. Historia się wydłuża, a nie skraca, i widać w niej zarówno błąd, jak i jego wycofanie.</p>
+
+    <p>Brzmi to jak wersja gorsza — zostaje ślad — ale w jednej sytuacji jest jedyną poprawną. Jeżeli commit trafił już na wspólną gałąź, to ktoś mógł go pobrać. Przesunięcie gałęzi wstecz sprawiłoby, że u niego commit nadal jest, a u Ciebie już nie; przy najbliższym scaleniu wróciłby jak gdyby nigdy nic. Revert nie ma tego problemu, bo <strong>nie zmienia przeszłości, tylko dodaje przyszłość</strong>, i każdy, kto pobierze zmiany, dostanie także wycofanie.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Chcę</th><th>Komenda</th><th>Ślad w historii</th></tr></thead>
+        <tbody>
+          <tr><td>wyrzucić zmianę w pliku, jeszcze nie w indeksie</td><td><code>git restore plik</code></td><td>brak — i brak odwrotu</td></tr>
+          <tr><td>wyjąć plik z indeksu, zachować zmiany</td><td><code>git restore --staged plik</code></td><td>brak</td></tr>
+          <tr><td>cofnąć własny commit, praca ma zostać</td><td><code>git reset --soft HEAD~1</code></td><td>tylko w reflogu</td></tr>
+          <tr><td>cofnąć własny commit razem ze zmianami</td><td><code>git reset --hard HEAD~1</code></td><td>tylko w reflogu</td></tr>
+          <tr><td>wycofać commit, który wyjechał do innych</td><td><code>git revert &lt;sha&gt;</code></td><td>nowy commit, widoczny dla wszystkich</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Ostatni wiersz to jedyny, w którym nie ma wyboru.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Kontekst historyczny · skąd tyle nazw</div>
+    <h2>Dlaczego istnieje jeszcze <code>checkout</code></h2>
+
+    <p>Jeśli szukałeś kiedyś w sieci, jak cofnąć zmianę w pliku, prawie na pewno trafiłeś na <code>git checkout -- plik</code>. Ta komenda nadal działa i robi to samo co <code>git restore plik</code>. Warto wiedzieć, dlaczego są dwie.</p>
+
+    <p><code>checkout</code> przez lata robił w gicie trzy niezwiązane ze sobą rzeczy: przełączał gałęzie, tworzył nowe i przywracał pliki. Efekt był taki, że jedna literówka w argumencie zmieniała operację nieszkodliwą w taką, która kasuje pracę. W 2019 roku rozdzielono to na dwie komendy o wąskich zakresach: <code>switch</code> zajmuje się gałęziami, <code>restore</code> plikami.</p>
+
+    <p>Praktyczny wniosek jest taki, że <strong>w nowym kodzie i w nowych nawykach warto używać nowej pary</strong>, bo trudniej nią zrobić sobie krzywdę. Stary <code>checkout</code> nie zniknie — zbyt wiele instrukcji i skryptów go używa — ale kiedy widzisz go w cudzej odpowiedzi w sieci, przetłumacz sobie od razu, o którą z dwóch operacji chodzi.</p>
+
+    <p>Przy okazji: żadna z tych komend nie ma nic wspólnego z <code>revert</code>, mimo podobieństwa nazw po polsku. <code>restore</code> działa na plikach i nie zostawia śladu, <code>revert</code> działa na commitach i zostawia ślad celowo.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Najczęstsza pomyłka w tej trójce nie polega na wybraniu złej komendy, tylko na uruchomieniu <code>reset --hard</code> z niezapisanymi zmianami w katalogu roboczym. Commity przetrwają, praca z ostatniej godziny nie. Odruch, który to rozbraja: przed każdym <code>--hard</code> zerknij w <code>git status</code>, a jeśli cokolwiek tam jest — najpierw <code>git stash</code>.</p>
+    <p>Warto też wiedzieć, że <code>reset</code> bez trybu to <code>--mixed</code>. Jeśli w cudzej instrukcji widzisz samo <code>git reset HEAD~1</code>, to znaczy: cofnij gałąź, zostaw pliki w spokoju, wyczyść index.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>reset --soft / --mixed / --hard</dt><dd>Trzy zasięgi tej samej operacji: sama gałąź, gałąź z indeksem, gałąź z indeksem i plikami.</dd>
+      <dt>restore</dt><dd>Nowsza komenda do przywracania plików, wydzielona z przeciążonego <code>checkout</code>.</dd>
+      <dt>revert</dt><dd>Nowy commit z odwrotną zmianą. Jedyny sposób wycofania czegoś, co już wyjechało.</dd>
+      <dt>HEAD~1</dt><dd>Rodzic bieżącego commita. <code>HEAD~n</code> to n-ty przodek idąc po pierwszych rodzicach.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Wszystkie trzy komendy dotyczyły Twojego dysku. Następny rozdział wprowadza drugą stronę i jedyny warunek, jaki ona stawia — a przy okazji tłumaczy komunikat, który widuje się najczęściej ze wszystkich.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +193,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

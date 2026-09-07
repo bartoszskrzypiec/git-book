@@ -30,7 +30,154 @@
   <h1>stash, cherry-pick, worktree</h1>
   <p class="subtitle">Trzy drobne narzędzia, po które sięga się rzadko i zawsze w pośpiechu. Każde z nich robi coś, co da się opisać jednym zdaniem o grafie.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li><code>stash</code> chowa niezacommitowane zmiany, budując z nich <strong>ukryte commity</strong> poza jakąkolwiek gałęzią. To nie jest schowek systemowy — to obiekty w repozytorium.</li>
+      <li><code>cherry-pick</code> nie przenosi commita, tylko <strong>tworzy jego kopię</strong> o innym rodzicu i innym skrócie. Oryginał zostaje tam, gdzie był.</li>
+      <li><code>worktree</code> daje drugi katalog roboczy podłączony do tego samego repozytorium — zamiast przełączania gałęzi tam i z powrotem.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">stash · schowek, który jest commitem</div>
+    <h2>Odłożyć pracę, nie tracąc jej</h2>
+
+    <p>Sytuacja jest zawsze ta sama: masz w toku zmiany, których nie chcesz jeszcze commitować, i musisz natychmiast zrobić coś innego. <code>git stash</code> zdejmuje te zmiany z katalogu roboczego i odkłada je na bok.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git stash</span><span>odłożenie i przywrócenie</span></div>
+<pre><span class="cmd">git stash</span>
+Saved working directory and index state WIP on master: e72b434 Commit 3
+
+<span class="cmd">git stash list</span>
+stash@{0}: WIP on master: e72b434 Commit 3
+
+<span class="cmd">git stash pop</span>
+On branch master
+Changes not staged for commit:
+        modified:   plik.txt</pre>
+    </div>
+    <p class="konsola-opis"><code>pop</code> przywraca i usuwa wpis; <code>apply</code> przywraca, ale wpis zostawia.</p>
+
+    <p>Nazwa sugeruje schowek, ale mechanizm jest inny i warto go znać, bo tłumaczy wszystkie dziwne zachowania tej komendy. <strong>Stash buduje commity</strong> — zwykle dwa, jeden ze stanem katalogu roboczego, drugi z indeksem — i zapisuje je pod refem <code>refs/stash</code>, poza jakąkolwiek gałęzią. Dlatego odłożone zmiany przeżywają przełączenie gałęzi, restart komputera i wszystko inne. I dlatego <code>git stash list</code> wygląda jak lista commitów, bo nią jest.</p>
+
+    <p>Wynikają stąd dwie rzeczy praktyczne. Po pierwsze, stash <strong>nie obejmuje plików nieśledzonych</strong> — nowy plik, którego nigdy nie dodałeś, zostaje w katalogu; potrzebne jest <code>git stash -u</code>. Po drugie, skoro to commity, to da się je odzyskać nawet po pomyłkowym <code>drop</code>: skrót jest w reflogu stasha.</p>
+
+    <p>Warto też wiedzieć, kiedy stash <strong>nie</strong> jest właściwym narzędziem. Stos odłożonych zmian bez opisu robi się nieczytelny po dwóch dniach, a odkładanie „na później” bywa sposobem na odsuwanie decyzji. Jeśli praca ma przetrwać dłużej niż kwadrans, lepszym rozwiązaniem jest zwykły commit na gałęzi roboczej — zawsze można go potem poprawić amendem.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">cherry-pick · kopia, nie przeprowadzka</div>
+    <h2>Ten sam commit gdzie indziej nie istnieje</h2>
+
+    <p>Klasyczna sytuacja: pilna poprawka wylądowała na złej gałęzi. Chciałbyś ją „przenieść”. Git nie ma takiej operacji, bo — jak w Rozdziale 2 — commit jest migawką osadzoną w konkretnym miejscu łańcucha. To, co jest możliwe, to zbudowanie <strong>nowego commita o tej samej zawartości</strong> w nowym miejscu.</p>
+
+    <div class="gitviz" data-git-scenario="cherryPick">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Cherry-pick tworzy drugi obiekt</p>
+        <p class="gitviz__sub">Jeden krok. Porównaj skróty obu węzłów.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — mechanizm opisuje tekst obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Po tej operacji ta sama zmiana istnieje w dwóch miejscach jako dwa różne commity. To bywa dokładnie tym, czego chcesz — i bywa kłopotem.</p>
+    </div>
+
+    <p>Kłopot pojawia się przy scalaniu. Jeżeli obie gałęzie w końcu się spotkają, git zobaczy dwa commity o tej samej treści i różnych skrótach. Zwykle poradzi sobie bez konfliktu, bo wynik jest identyczny, ale w historii zostaną obie kopie — a przy nieco bardziej złożonych zmianach potrafi z tego wyjść konflikt, który wygląda absurdalnie („ta linia jest już taka, jak ma być”).</p>
+
+    <p>Dlatego <code>cherry-pick</code> najlepiej sprawdza się tam, gdzie gałęzie <strong>nie mają się spotkać</strong>: przeniesienie poprawki do gałęzi wydaniowej, wyciągnięcie jednego commita z porzuconej gałęzi. Jeśli gałęzie i tak się scalą, prawie zawsze lepszym narzędziem jest zwykły merge albo rebase.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">worktree · dwa katalogi, jedno repozytorium</div>
+    <h2>Kiedy przełączanie gałęzi przeszkadza</h2>
+
+    <p>Przełączenie gałęzi przepisuje pliki na dysku. Zwykle to nie problem, ale bywa kosztowne: przy dużym projekcie unieważnia cache narzędzi, wymusza ponowne indeksowanie w IDE, a czasem po prostu nie da się go zrobić w środku długiej operacji.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git worktree</span><span>drugi katalog roboczy</span></div>
+<pre><span class="cmd">git worktree add ../przeglad ABC-1234</span>
+
+<span class="cmd">git worktree list</span>
+/praca      e72b434 [master]
+/przeglad   e72b434 [ABC-1234]</pre>
+    </div>
+    <p class="konsola-opis">Dwa katalogi, jedno <code>.git</code>. Obiekty, gałęzie i reflog są wspólne.</p>
+
+    <p>To jest jedyne z trzech narzędzi tego rozdziału, które nie tworzy żadnych commitów — dodaje tylko drugi katalog roboczy podpięty do tego samego repozytorium. Każdy worktree ma własny HEAD i własny index, więc <strong>możesz mieć dwie gałęzie otwarte naraz</strong>, w dwóch oknach edytora.</p>
+
+    <p>Typowe zastosowanie: recenzujesz cudzą gałąź, nie przerywając własnej pracy. Albo trzymasz osobny katalog na długi build, żeby nie kolidował z tym, w którym piszesz. Jedyne ograniczenie jest oczywiste, gdy się o nim pomyśli: <strong>tej samej gałęzi nie da się wypisać w dwóch worktree naraz</strong> — bo obie kopie chciałyby ją przesuwać.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Podsumowanie · trzy narzędzia, trzy warstwy</div>
+    <h2>Co która komenda dokłada</h2>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>zasieg trzech narzedzi</span><span>na tym samym repozytorium</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Stash dodaje ukryte commity, cherry-pick dodaje commit na gałęzi, worktree dodaje katalog roboczy">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="34" width="180" height="128" rx="10" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="104" y="58" text-anchor="middle" font-size="11" fill="#4fc3c0">stash</text>
+          <circle cx="72" cy="102" r="17" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="136" cy="102" r="17" fill="#1b1e24" stroke="#8b909b" stroke-width="2" stroke-dasharray="3 3"/>
+          <text x="136" y="106" text-anchor="middle" font-size="8.5" fill="#8b909b">WIP</text>
+          <text x="104" y="146" text-anchor="middle" font-size="9.5" fill="#8b909b">commit poza galezia</text>
+
+          <rect x="220" y="34" width="180" height="128" rx="10" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="310" y="58" text-anchor="middle" font-size="11" fill="#4fc3c0">cherry-pick</text>
+          <circle cx="278" cy="102" r="17" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <path d="M 330 102 L 302 102" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 309 97 L 299 102 L 309 107 Z" fill="#2a2f38"/>
+          <circle cx="348" cy="102" r="17" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="310" y="146" text-anchor="middle" font-size="9.5" fill="#8b909b">kopia na galezi</text>
+
+          <rect x="426" y="34" width="180" height="128" rx="10" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="516" y="58" text-anchor="middle" font-size="11" fill="#4fc3c0">worktree</text>
+          <rect x="452" y="86" width="56" height="32" rx="6" fill="#20242c" stroke="#4fc3c0"/>
+          <rect x="524" y="86" width="56" height="32" rx="6" fill="#20242c" stroke="#4fc3c0"/>
+          <text x="516" y="146" text-anchor="middle" font-size="9.5" fill="#8b909b">drugi katalog, te same obiekty</text>
+
+          <text x="14" y="188" font-size="10.5" fill="#8b909b">zadne z trzech nic nie usuwa &#183; wszystkie tylko dokladaja</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Dwa pierwsze narzędzia budują obiekty, trzecie nie buduje nic — dokłada tylko miejsce do pracy.</div>
+    </div>
+
+    <p>Warto zauważyć, że wszystkie trzy odpowiadają na ten sam rodzaj potrzeby: <em>muszę zająć się czymś innym, nie tracąc tego, co mam teraz</em>. Różnią się tylko tym, jak długo ta druga rzecz potrwa. Na pięć minut wystarczy stash, na pół dnia lepszy jest osobny commit albo worktree, a cherry-pick pojawia się wtedy, gdy okazuje się, że praca powstała nie tam, gdzie miała.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Wszystkie trzy narzędzia mają wspólną cechę, dla której warto je znać razem: <strong>nic w nich nie jest destrukcyjne</strong>. Stash buduje commity, cherry-pick buduje commit, worktree tworzy katalog. W chwili, gdy trzeba szybko zrobić coś innego, są to bezpieczniejsze odruchy niż <code>reset --hard</code> „żeby mieć czysto”.</p>
+    <p>Jeśli sięgasz po stash częściej niż raz dziennie, to zwykle znak, że gałąź robocza jest za szeroka. Osobna gałąź na każdą przerwaną myśl kosztuje czterdzieści jeden bajtów i nie wymaga pamiętania, co było w <code>stash@{3}</code>.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>stash</dt><dd>Odłożone zmiany zapisane jako commity pod refem <code>refs/stash</code>, poza gałęziami.</dd>
+      <dt>cherry-pick</dt><dd>Zbudowanie kopii commita na innym rodzicu. Nowy skrót, ta sama zmiana.</dd>
+      <dt>worktree</dt><dd>Dodatkowy katalog roboczy podłączony do tego samego repozytorium, z własnym HEAD i indeksem.</dd>
+      <dt>WIP</dt><dd>Domyślny opis wpisu stasha (<em>work in progress</em>). Warto go nadpisać własnym: <code>git stash push -m "opis"</code>.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Trzecia część się kończy, a razem z nią wszystko, co dzieje się wyłącznie na Twoim dysku. Druga część książki wraca do codziennych komend — a jeśli czytasz po kolei, to właśnie teraz masz już model, którym da się je wyjaśnić zamiast zapamiętywać.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +189,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>
