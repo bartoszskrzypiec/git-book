@@ -30,7 +30,181 @@
   <h1>Czytanie historii: log, graph i operator dwóch kropek</h1>
   <p class="subtitle">Jedna składnia — A..B — odpowiada na pytanie „co dokładnie wypycham”. Bez niej zostaje liczba commitów w oknie IDE, która odpowiada na zupełnie inne pytanie.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Zapis <code>A..B</code> znaczy: <strong>commity osiągalne z B, ale nie z A</strong>. To jest odpowiedź na pytanie „co dokładnie wypycham”.</li>
+      <li>Trzy kropki <code>A...B</code> to co innego: <strong>różnica symetryczna</strong>, czyli commity wyłączne dla każdej ze stron. Stąd <code>--left-right --count</code>, które daje dwie liczby.</li>
+      <li><code>git log --oneline --graph --all --decorate</code> to jedno polecenie, które pokazuje rozjazd, nazwy gałęzi i pozycję HEAD naraz.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zakresy · dwie kropki i trzy</div>
+    <h2>Składnia, która odpowiada na właściwe pytanie</h2>
+
+    <p>Najczęstsze pytanie przed wypchnięciem brzmi: <em>co właściwie wyślę</em>. Odpowiedź nie jest liczbą commitów na gałęzi ani liczbą w oknie IDE, tylko wynikiem tego zapytania:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>zakres A..B</span><span>co mam ponad master</span></div>
+<pre><span class="cmd">git log --oneline master..galaz</span>
+886fe82 Zmiana A
+
+<span class="cmd">git rev-list --count master..galaz</span>
+1</pre>
+    </div>
+    <p class="konsola-opis">Czytaj to jako: „z <code>galaz</code> da się dojść tutaj, z <code>master</code> nie”.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>A..B kontra A...B</span><span>co wchodzi do wyniku</span></div>
+      <svg viewBox="0 0 620 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graf z rozgałęzieniem i zaznaczonymi zakresami dwu- i trójkropkowym">
+        <g font-family="IBM Plex Mono, monospace">
+          <path d="M 106 110 L 62 110" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 69 105 L 59 110 L 69 115 Z" fill="#2a2f38"/>
+          <path d="M 206 80 C 176 80, 168 110, 142 110" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 149 105 L 139 110 L 149 115 Z" fill="#2a2f38"/>
+          <path d="M 206 148 C 176 148, 168 110, 142 110" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 149 105 L 139 110 L 149 115 Z" fill="#2a2f38"/>
+          <path d="M 306 80 L 262 80" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 269 75 L 259 80 L 269 85 Z" fill="#2a2f38"/>
+
+          <circle cx="36" cy="110" r="18" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="120" cy="110" r="18" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="228" cy="80" r="18" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="328" cy="80" r="18" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="228" cy="148" r="18" fill="#1b1e24" stroke="#6e93be" stroke-width="2"/>
+
+          <text x="328" y="50" text-anchor="middle" font-size="9.5" fill="#e8a33d">galaz</text>
+          <text x="228" y="182" text-anchor="middle" font-size="9.5" fill="#6e93be">master</text>
+          <text x="120" y="146" text-anchor="middle" font-size="9.5" fill="#8b909b">wspolny przodek</text>
+
+          <text x="392" y="66" font-size="10.5" fill="#e8a33d">master..galaz</text>
+          <text x="392" y="84" font-size="10" fill="#8b909b">dwa bursztynowe</text>
+          <text x="392" y="118" font-size="10.5" fill="#9c82d8">master...galaz</text>
+          <text x="392" y="136" font-size="10" fill="#8b909b">bursztynowe I niebieski</text>
+          <text x="392" y="170" font-size="10" fill="#8b909b">szare nie licza sie nigdy &#8212;</text>
+          <text x="392" y="186" font-size="10" fill="#8b909b">sa osiagalne z obu stron</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Dwie kropki pytają „co ma jedna strona ponad drugą”. Trzy — „czym się różnią”.</div>
+    </div>
+
+    <p>Zwróć uwagę, że kolejność argumentów jest tu istotna i łatwo ją odwrócić. <code>master..galaz</code> i <code>galaz..master</code> odpowiadają na dwa różne pytania, a oba są sensowne — pierwsze mówi, co masz ponad master, drugie, czego Ci względem niego brakuje. Jeśli wynik jest pusty tam, gdzie się czegoś spodziewałeś, najczęściej wystarczy zamienić strony miejscami.</p>
+
+    <p>Ta sama składnia działa wszędzie tam, gdzie podaje się commity: w <code>log</code>, <code>diff</code>, <code>rev-list</code>, <code>cherry-pick</code>. <code>git log origin/master..HEAD</code> to najkrótsza odpowiedź na pytanie „co wypycham”, a <code>git log HEAD..origin/master</code> — na „co przyszło, a czego nie mam”.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Graf · jedno polecenie na całą sytuację</div>
+    <h2>Zobaczyć rozjazd zamiast go liczyć</h2>
+
+    <p>Liczby są precyzyjne, ale kształt bywa szybszy w odbiorze. <code>git log --oneline --graph --all --decorate</code> rysuje historię w terminalu, razem z etykietami gałęzi:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git log --oneline --graph --all</span><span>rozjazd widać jako rozwidlenie</span></div>
+<pre>* 886fe82 Zmiana A
+| * f0a46cc Zmiana B
+|/
+* d4fe896 Usun cache
+* 2f0a474 Wpadka
+* de4e3ae Baza</pre>
+    </div>
+    <p class="konsola-opis">Linia <code>|/</code> to punkt, w którym linie się rozeszły — czyli wspólny przodek.</p>
+
+    <p>Rysunek po lewej stronie czyta się jak schemat linii kolejowej: pionowa kreska to ciągłość jednej linii, ukośnik — miejsce, w którym linia się od czegoś odgałęzia albo do czegoś wraca. Przy dwóch gałęziach jest to czytelne od razu; przy dziesięciu robi się gęsto i wtedy warto ograniczyć wypis do interesujących gałęzi, podając ich nazwy zamiast <code>--all</code>.</p>
+
+    <p>Cztery przełączniki, każdy z jednym zadaniem: <code>--oneline</code> skraca do jednej linii na commit, <code>--graph</code> dorysowuje kreski, <code>--all</code> pokazuje wszystkie gałęzie, nie tylko bieżącą, <code>--decorate</code> dopisuje przy commitach nazwy refów (w nowszych wersjach gita jest domyślny).</p>
+
+    <p>Warto zapisać to sobie jako alias, bo wpisywanie tego w całości cztery razy dziennie nikomu nie służy: <code>git config --global alias.graf "log --oneline --graph --all --decorate"</code>. Więcej takich skrótów zbiera Dodatek B.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Szukanie · trzy pytania, trzy komendy</div>
+    <h2>Kiedy log nie wystarcza</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Pytanie</th><th>Komenda</th></tr></thead>
+        <tbody>
+          <tr><td>Kto i kiedy zmienił tę linię?</td><td><code>git blame plik</code></td></tr>
+          <tr><td>W którym commicie zniknął ten fragment kodu?</td><td><code>git log -S "fragment"</code></td></tr>
+          <tr><td>Co się działo z tym jednym plikiem?</td><td><code>git log --follow plik</code></td></tr>
+          <tr><td>Który commit zepsuł zachowanie?</td><td><code>git bisect</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Wszystkie cztery czytają ten sam graf, tylko zadają mu inne pytanie.</p>
+
+    <p>Dwie z nich zasługują na komentarz. <code>git log -S</code> — nazywane <em>pickaxe</em> — szuka commitów, w których <strong>zmieniła się liczba wystąpień</strong> podanego tekstu. To najszybszy sposób, żeby znaleźć moment, w którym coś dodano albo usunięto, i działa też wtedy, gdy nie pamiętasz nazwy pliku.</p>
+
+    <p><code>git blame</code> ma jedną właściwość, o której warto wiedzieć, zanim się na nią nadzieje: pokazuje <strong>ostatni</strong> commit, który dotknął danej linii. Jeśli ktoś przeformatował plik albo zmienił w nim wcięcia, wszystkie linie będą wskazywać na ten commit, a prawdziwy autor zniknie z widoku. Ratunkiem jest <code>-w</code>, które każe ignorować zmiany białych znaków, albo podanie zakresu kończącego się przed tamtym commitem.</p>
+
+    <p><code>git bisect</code> szuka commita metodą połowienia: podajesz commit, w którym było dobrze, i taki, w którym jest źle, a git ustawia Cię kolejno w połowie zakresu i pyta, jak jest. Przy historii tysiąca commitów wystarczy około dziesięciu odpowiedzi. Warto o nim pamiętać, bo jest rzadko używany i niezastąpiony wtedy, gdy „przecież tydzień temu działało”.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Nazwy commitów · nie tylko skróty</div>
+    <h2>Sposoby wskazania tego samego</h2>
+
+    <p>Wszędzie tam, gdzie git przyjmuje commit, przyjmuje też cały zestaw zapisów, które go opisują. Warto znać kilka, bo skracają pracę i pojawiają się w cudzych instrukcjach.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>jak wskazac commit</span><span>szesc rownowaznych sposobow</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sześć różnych zapisów wskazujących na ten sam commit">
+        <g font-family="IBM Plex Mono, monospace">
+          <circle cx="310" cy="100" r="30" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="310" y="104" text-anchor="middle" font-size="10.5" fill="#e8a33d">886fe82</text>
+
+          <text x="14" y="36" font-size="10.5" fill="#4fc3c0">886fe82</text>
+          <text x="14" y="54" font-size="9.5" fill="#8b909b">skrot skrocony</text>
+          <text x="14" y="104" font-size="10.5" fill="#4fc3c0">galaz</text>
+          <text x="14" y="122" font-size="9.5" fill="#8b909b">nazwa refa</text>
+          <text x="14" y="172" font-size="10.5" fill="#4fc3c0">HEAD~2</text>
+          <text x="14" y="190" font-size="9.5" fill="#8b909b">drugi przodek</text>
+
+          <text x="470" y="36" font-size="10.5" fill="#4fc3c0">HEAD@{5}</text>
+          <text x="470" y="54" font-size="9.5" fill="#8b909b">z reflogu</text>
+          <text x="470" y="104" font-size="10.5" fill="#4fc3c0">galaz^</text>
+          <text x="470" y="122" font-size="9.5" fill="#8b909b">pierwszy rodzic</text>
+          <text x="470" y="172" font-size="10.5" fill="#4fc3c0">@{u}</text>
+          <text x="470" y="190" font-size="9.5" fill="#8b909b">upstream biezacej</text>
+
+          <path d="M 120 40 L 284 88" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 120 104 L 276 100" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 120 168 L 284 116" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 460 40 L 338 88" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 460 104 L 342 100" stroke="#2a2f38" stroke-width="1.5"/>
+          <path d="M 460 168 L 338 116" stroke="#2a2f38" stroke-width="1.5"/>
+        </g>
+      </svg>
+      <div class="diagram-caption">Sześć zapisów, jeden obiekt. Wszystkie działają w każdej komendzie przyjmującej commit.</div>
+    </div>
+
+    <p>Dwa znaki warto rozróżnić raz na zawsze, bo mylą się wszystkim. <code>^</code> wybiera <strong>którego rodzica</strong> (przydatne tylko przy commitach scalających: <code>^1</code> to pierwszy, <code>^2</code> drugi). <code>~</code> idzie <strong>ile pokoleń wstecz</strong> po pierwszych rodzicach. Dlatego <code>HEAD~3</code> to prapradziadek, a <code>HEAD^3</code> to trzeci rodzic — który zwykle nie istnieje.</p>
+
+    <p>Skrót <code>@{u}</code> jest wart zapamiętania, bo zastępuje wpisywanie nazwy gałęzi zdalnej: <code>git log @{u}..HEAD</code> działa niezależnie od tego, na jakiej gałęzi stoisz. Podobnie <code>-</code> oznacza poprzednią gałąź — <code>git switch -</code> przeskakuje tam, gdzie byłeś, dokładnie jak w powłoce.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Zanim wypchniesz cokolwiek na gałąź, na której zależy Ci na porządku, uruchom <code>git log --oneline origin/master..HEAD</code>. Zajmuje sekundę i odpowiada na pytanie, którego okno pusha w IDE nie zadaje: <em>co konkretnie tu jedzie</em>. Rozdział 29 pokazuje, dlaczego liczba w tym oknie potrafi opisywać zupełnie coś innego.</p>
+    <p><code>git blame</code> ma niesłuszną reputację narzędzia do szukania winnych. W praktyce służy do czegoś innego: prowadzi do commita, a commit — do jego wiadomości i do numeru zgłoszenia. To jest właśnie ten moment, w którym opłaca się, że ktoś napisał wtedy „dlaczego”, a nie „poprawki”.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>A..B</dt><dd>Commity osiągalne z B, ale nie z A.</dd>
+      <dt>A...B</dt><dd>Różnica symetryczna: commity wyłączne dla każdej ze stron.</dd>
+      <dt>pickaxe (<code>-S</code>)</dt><dd>Wyszukiwanie commitów, w których zmieniła się liczba wystąpień tekstu.</dd>
+      <dt>bisect</dt><dd>Połowienie zakresu commitów w poszukiwaniu tego, który wprowadził zmianę zachowania.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Druga część się kończy. Czwarta wprowadza drugą stronę rozmowy — serwer, który ma własne zdanie o tym, co wolno wypchnąć, i własne narzędzia, żeby to zdanie egzekwować.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

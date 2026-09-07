@@ -30,7 +30,162 @@
   <h1>fetch nie jest pullem, a origin/master jest lokalny</h1>
   <p class="subtitle">origin/master nie jest oknem na serwer. To lokalny ref, aktualizowany wyłącznie wtedy, gdy sam o to poprosisz — dlatego bywa nieaktualny i dlatego liczby w IDE potrafią kłamać.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li><code>origin/master</code> nie jest oknem na serwer. To <strong>lokalny ref</strong> — plik na Twoim dysku — pamiętający, gdzie serwer był przy ostatnim pobraniu.</li>
+      <li><code>fetch</code> aktualizuje wyłącznie te refy. Twoje gałęzie nie ruszają się ani o krok, więc fetch jest operacją całkowicie bezpieczną.</li>
+      <li><code>pull</code> to <code>fetch</code> plus scalenie. Cała jego nieprzewidywalność bierze się z tego drugiego kroku, nie z pierwszego.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Obserwacja · to jest plik</div>
+    <h2><code>origin/master</code> leży na Twoim dysku</h2>
+
+    <p>W Rozdziale 4 wypisaliśmy zawartość gałęzi. Refy zdalne wyglądają identycznie, bo są tym samym — nazwą i adresem:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>refs/remotes</span><span>zdalne refy od środka</span></div>
+<pre><span class="cmd">ls .git/refs/remotes/origin</span>
+ABC-1234_wyszukiwarka
+master
+
+<span class="cmd">cat .git/refs/remotes/origin/master</span>
+<span class="sha">f0bae61e149afb77a3b0413aed840734e313783f</span></pre>
+    </div>
+    <p class="konsola-opis">Ten plik zmienia się wyłącznie wtedy, gdy sam rozmawiasz z serwerem.</p>
+
+    <p>To jest jedna z najbardziej użytecznych rzeczy do zrozumienia w całej pracy z gitem, bo z niej wynika cała klasa nieporozumień. <strong>Git nie odpytuje serwera w tle.</strong> Nie robi tego przy <code>status</code>, przy <code>log</code>, ani przy otwarciu projektu w edytorze. Jeżeli od trzech dni nie pobierałeś, to <code>origin/master</code> pokazuje stan sprzed trzech dni — z pełnym przekonaniem i bez żadnego ostrzeżenia.</p>
+
+    <p>Dlatego komunikat „Your branch is up to date with 'origin/master'” nie znaczy „jesteś na bieżąco”. Znaczy: <em>jesteś zgodny z tym, co ostatnio widziałeś</em>.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy stany, nie dwa</span><span>o czym mowi status</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Serwer, lokalna pamięć o serwerze i gałąź lokalna jako trzy osobne stany">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="40" width="170" height="60" rx="8" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="99" y="64" text-anchor="middle" font-size="10.5" fill="#6e93be">serwer</text>
+          <text x="99" y="82" text-anchor="middle" font-size="9.5" fill="#8b909b">prawdziwy stan</text>
+
+          <rect x="225" y="40" width="170" height="60" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="310" y="64" text-anchor="middle" font-size="10.5" fill="#4fc3c0">origin/master</text>
+          <text x="310" y="82" text-anchor="middle" font-size="9.5" fill="#8b909b">Twoja pamiec o nim</text>
+
+          <rect x="436" y="40" width="170" height="60" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="521" y="64" text-anchor="middle" font-size="10.5" fill="#e8a33d">master</text>
+          <text x="521" y="82" text-anchor="middle" font-size="9.5" fill="#8b909b">Twoja galaz</text>
+
+          <path d="M 190 70 L 218 70" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 211 65 L 221 70 L 211 75 Z" fill="#2a2f38"/>
+          <text x="204" y="122" text-anchor="middle" font-size="10" fill="#8b909b">fetch</text>
+          <path d="M 204 82 L 204 112" stroke="#2a2f38" stroke-width="1" stroke-dasharray="2 3"/>
+
+          <path d="M 401 70 L 429 70" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 422 65 L 432 70 L 422 75 Z" fill="#2a2f38"/>
+          <text x="415" y="122" text-anchor="middle" font-size="10" fill="#8b909b">merge / rebase</text>
+          <path d="M 415 82 L 415 112" stroke="#2a2f38" stroke-width="1" stroke-dasharray="2 3"/>
+
+          <text x="14" y="160" font-size="10.5" fill="#8b909b">git status porownuje tylko DWA PRAWE pudelka &#183; o lewym nie wie nic</text>
+          <text x="14" y="180" font-size="10.5" fill="#8b909b">pull to obie strzalki naraz, wykonane bez pokazania stanu posredniego</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Między Tobą a serwerem stoi trzeci stan — i tylko on jest tym, o czym mówi status.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Fetch · pobranie bez konsekwencji</div>
+    <h2>Co dokładnie robi <code>git fetch</code></h2>
+
+    <p>Fetch pobiera z serwera brakujące obiekty i przestawia refy <code>origin/*</code>. To wszystko. <strong>Nie dotyka Twoich gałęzi, indeksu ani plików na dysku</strong> — jest więc operacją, którą można wykonać w każdej chwili, także w środku pracy, bez ryzyka.</p>
+
+    <div class="gitviz" data-git-scenario="fetch">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Fetch, a potem scalenie</p>
+        <p class="gitviz__sub">Dwa kroki. Zwróć uwagę, co się rusza w pierwszym, a co dopiero w drugim.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — oba kroki są opisane w tekście.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="fetch">git fetch</button>
+        <button data-git-op="rebase">git rebase origin/master</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Po pierwszym kroku etykieta origin/master przeskakuje, ale Twoja gałąź stoi. Dopiero drugi krok rusza pracę.</p>
+    </div>
+
+    <p>Skoro fetch jest bezpieczny, to jest też najlepszym pierwszym krokiem w każdej niejasnej sytuacji. Zanim ocenisz, czy jesteś do przodu, czy do tyłu, warto najpierw odświeżyć to, względem czego porównujesz — inaczej diagnozujesz stan sprzed trzech dni.</p>
+
+    <p>Nazwa refa w wypisach bywa myląca. Kiedy widzisz <code>origin/master</code>, czytaj to jako „master, jakim go widziałem ostatnio”. To dwa słowa więcej, ale za to zdanie przestaje wprowadzać w błąd.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pull · fetch plus decyzja</div>
+    <h2>Dlaczego pull bywa nieprzewidywalny</h2>
+
+    <p><code>git pull</code> to skrót na dwie komendy: <code>git fetch</code>, a potem <strong>scalenie pobranego z Twoją gałęzią</strong>. Pierwszy krok jest zawsze taki sam. Drugi zależy od stanu repozytorium i od konfiguracji — i stąd bierze się cała jego reputacja.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Sytuacja</th><th>Co robi <code>pull</code></th></tr></thead>
+        <tbody>
+          <tr><td>nie masz własnych commitów</td><td>przewija gałąź do przodu, nic nie powstaje</td></tr>
+          <tr><td>masz własne, konfiguracja domyślna</td><td>tworzy commit scalający</td></tr>
+          <tr><td>masz własne, <code>pull.rebase true</code></td><td>przenosi Twoje commity na szczyt pobranych, nadając im nowe skróty</td></tr>
+          <tr><td>masz niezacommitowane zmiany kolidujące</td><td>odmawia i nic nie robi</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Cztery zachowania jednej komendy. To dlatego bezpieczniej jest robić fetch i decydować samemu.</p>
+
+    <p>Trzeci wiersz zasługuje na uwagę, bo jest w nim ukryta pułapka. <code>pull</code> z rebasem <strong>przepisuje historię</strong> Twojej gałęzi — z wszystkimi tego konsekwencjami z Rozdziału 17. Na własnej gałęzi funkcyjnej jest to zwykle dokładnie to, czego chcesz. Ale to znaczy, że jedna linijka w konfiguracji zamienia komendę „pobierz” w komendę przepisującą commity, i warto o tym wiedzieć, zanim się ją włączy.</p>
+
+    <p>Najbezpieczniejszy nawyk brzmi: <strong>fetch, spójrz, dopiero potem decyduj</strong>. Po fetchu <code>git log --oneline HEAD..origin/master</code> pokazuje dokładnie to, co przyszło, a <code>git status -sb</code> — o ile jesteś do przodu i do tyłu. Dopiero mając te dwie liczby, wiadomo, czy potrzebny jest merge, rebase, czy nic.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wniosek · dwa nawyki zamiast jednego</div>
+    <h2>Fetch często, pull świadomie</h2>
+
+    <p>Z rozdzielenia tych dwóch komend wynika prosta zmiana nawyku, która oszczędza sporo niespodzianek. <code>fetch</code> można robić odruchowo — jest bezpieczny i tani, więc równie dobrze może chodzić w tle albo być pierwszym ruchem po każdej przerwie. <code>pull</code> zasługuje na moment uwagi, bo zmienia Twoją gałąź.</p>
+
+    <p>Jest jeszcze jeden powód, dla którego warto je rozdzielać, i ujawnia się przy pracy w większym repozytorium. Kiedy pobierzesz zmiany osobno, możesz je najpierw <strong>obejrzeć</strong>: sprawdzić, czy ktoś nie ruszał plików, nad którymi właśnie pracujesz, i dopiero potem zdecydować, czy chcesz je do siebie wciągnąć teraz, czy dokończyć swoją zmianę w spokoju. Pull odbiera Ci ten moment, bo wykonuje obie rzeczy naraz.</p>
+
+    <p>Warto też wiedzieć, że fetch domyślnie pobiera <strong>wszystkie</strong> gałęzie zdalnego repozytorium, nie tylko tę, na której stoisz. Dlatego po jednym fetchu możesz porównać się z dowolną gałęzią — <code>git log HEAD..origin/rc</code> działa, choć nigdy jej u siebie nie wypisywałeś.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Kiedy IDE pokazuje liczbę commitów do wypchnięcia albo pobrania, ta liczba pochodzi z lokalnych refów <code>origin/*</code> — czyli z pamięci, nie z serwera. Część narzędzi odświeża je w tle co kilka minut, część dopiero na żądanie. Jeśli liczba wygląda dziwnie, pierwszym ruchem jest fetch, a nie interpretowanie tego, co widać.</p>
+    <p>Ta sama zasada dotyczy sytuacji odwrotnej, opisanej w Rozdziale 29: liczba potrafi być zawyżona, bo IDE porównuje z gałęzią zdalną, której od tygodni nikt nie aktualizował.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>ref zdalny (<code>origin/*</code>)</dt><dd>Lokalna kopia stanu gałęzi na serwerze z chwili ostatniego pobrania.</dd>
+      <dt>fetch</dt><dd>Pobranie obiektów i aktualizacja refów zdalnych. Nie rusza Twoich gałęzi.</dd>
+      <dt>pull</dt><dd>Fetch plus scalenie. Zachowanie drugiego kroku zależy od konfiguracji.</dd>
+      <dt>up to date</dt><dd>Zgodny z lokalną kopią stanu serwera — niekoniecznie z samym serwerem.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Skoro pull musi wybrać między scaleniem a rebasem, wypada wiedzieć, co ten wybór oznacza. Następny rozdział stawia to pytanie wprost — i pokazuje, że odpowiedź nie zależy od gustu, tylko od tego, kto już widział Twoje commity.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +197,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

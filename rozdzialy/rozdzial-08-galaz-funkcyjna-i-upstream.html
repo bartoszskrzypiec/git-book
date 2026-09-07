@@ -30,7 +30,167 @@
   <h1>Gałąź funkcyjna od zera i co znaczy „śledzi”</h1>
   <p class="subtitle">Upstream to nie ustawienie serwera, tylko dwie linijki w lokalnym pliku konfiguracyjnym. Dopiero one sprawiają, że samo git push wie, dokąd.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Upstream to nie ustawienie serwera, tylko <strong>dwie linijki w lokalnej konfiguracji</strong>: z jakim zdalnym repozytorium i z jaką gałęzią skojarzona jest ta gałąź.</li>
+      <li>Dopiero one sprawiają, że <code>git push</code> bez argumentów wie dokąd, a <code>git status</code> potrafi powiedzieć „ahead 2, behind 1”.</li>
+      <li>Gałąź funkcyjną zakłada się od <strong>świeżego</strong> punktu, nie od tego, co akurat masz. Rozdział 25 pokazuje, ile kosztuje pominięcie tego kroku.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Start · trzy komendy i jedna decyzja</div>
+    <h2>Gałąź funkcyjna od zera</h2>
+
+    <p>Zakładanie gałęzi to jedna komenda, ale poprzedza ją decyzja, o której łatwo zapomnieć: <strong>od czego ją odbijasz</strong>. Gałąź powstaje tam, gdzie stoi HEAD, więc jeśli stoisz na starym stanie mastera, gałąź odziedziczy tę starość.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>nowa gałąź</span><span>od aktualnego stanu, nie od swojego</span></div>
+<pre><span class="cmd">git switch master</span>
+<span class="cmd">git pull</span>
+<span class="cmd">git switch -c ABC-1234_wyszukiwarka</span>
+Switched to a new branch 'ABC-1234_wyszukiwarka'</pre>
+    </div>
+    <p class="konsola-opis">Trzy komendy. Drugą pomija się najczęściej i to ona kosztuje najwięcej.</p>
+
+    <p><code>switch -c</code> to skrót na dwie rzeczy naraz: utwórz ref i przypnij do niego HEAD. Nic poza tym się nie dzieje — żadnego commita, żadnej zmiany plików, bo nowa gałąź wskazuje dokładnie ten sam commit co poprzednia.</p>
+
+    <p>Pytanie „od czego odbić” ma zwykle oczywistą odpowiedź — od aktualnego stanu gałęzi głównej — ale bywają wyjątki warte świadomej decyzji. Poprawka do wydania odbija się od gałęzi wydaniowej, nie od głównej, bo inaczej niesie ze sobą wszystko, co od tamtego wydania zdążyło wejść. Praca budująca na cudzej, jeszcze niescalonej gałęzi odbija się od niej — i wtedy trzeba pamiętać, że po jej przepisaniu Twoja gałąź zostanie zawieszona w próżni.</p>
+
+    <p>Nazwa gałęzi jest prawie dowolna, ale prawie zawsze podlega konwencji zespołu — najczęściej z numerem zgłoszenia na początku. Warto się jej trzymać nie z uprzejmości, tylko dlatego, że po tygodniu <code>git branch</code> potrafi wypisać kilkanaście pozycji i wtedy <code>poprawka2</code> nie mówi nic. Ukośnik w nazwie nie jest znakiem specjalnym — <code>refs/heads/feature/coś</code> to po prostu podkatalog w <code>.git/refs</code>.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Upstream · dwie linijki, które zmieniają wszystko</div>
+    <h2>Co robi <code>-u</code> przy pierwszym pushu</h2>
+
+    <p>Świeża gałąź jest lokalna i git nie ma pojęcia, gdzie miałaby trafić. Pierwszy push podaje się więc z <code>-u</code>, a git zapisuje przy okazji skojarzenie. Można je zobaczyć, bo to zwykła konfiguracja:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git config --local --list</span><span>po <code>git push -u origin ABC-1234</code></span></div>
+<pre>remote.origin.url=../origin.git
+remote.origin.fetch=+refs/heads/*:refs/remotes/origin/*
+<span class="ref">branch.ABC-1234_wyszukiwarka.remote=origin</span>
+<span class="ref">branch.ABC-1234_wyszukiwarka.merge=refs/heads/ABC-1234_wyszukiwarka</span></pre>
+    </div>
+    <p class="konsola-opis">Dwie podświetlone linie to cały upstream. Nic z tego nie jest zapisane po stronie serwera.</p>
+
+    <p>Od tej chwili <code>git push</code> i <code>git pull</code> bez argumentów wiedzą, co robić, a <code>git status</code> ma z czym porównywać. Zobaczysz to także w wypisie gałęzi:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git branch -vv</span><span>skojarzenia widoczne wprost</span></div>
+<pre><span class="cmd">git branch -vv</span>
+* ABC-1234_wyszukiwarka 407463b <span class="ref">[origin/ABC-1234_wyszukiwarka]</span> Dodaj wyszukiwarke
+  master                f0bae61 <span class="ref">[origin/master]</span> Konfiguracja projektu</pre>
+    </div>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>skad push wie dokad</span><span>trzy warstwy konfiguracji</span></div>
+      <svg viewBox="0 0 620 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gałąź lokalna, wpis upstream w konfiguracji i adres zdalnego repozytorium">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="52" width="150" height="52" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="89" y="76" text-anchor="middle" font-size="10.5" fill="#4fc3c0">galaz lokalna</text>
+          <text x="89" y="92" text-anchor="middle" font-size="9.5" fill="#8b909b">ABC-1234</text>
+
+          <path d="M 168 78 L 214 78" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 207 73 L 217 78 L 207 83 Z" fill="#2a2f38"/>
+
+          <rect x="220" y="52" width="180" height="52" rx="8" fill="#1b1e24" stroke="#9c82d8"/>
+          <text x="310" y="76" text-anchor="middle" font-size="10.5" fill="#9c82d8">branch.*.remote</text>
+          <text x="310" y="92" text-anchor="middle" font-size="10.5" fill="#9c82d8">branch.*.merge</text>
+
+          <path d="M 404 78 L 450 78" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 443 73 L 453 78 L 443 83 Z" fill="#2a2f38"/>
+
+          <rect x="456" y="52" width="150" height="52" rx="8" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="531" y="76" text-anchor="middle" font-size="10.5" fill="#6e93be">remote.origin.url</text>
+          <text x="531" y="92" text-anchor="middle" font-size="9.5" fill="#8b909b">adres serwera</text>
+
+          <text x="14" y="140" font-size="10.5" fill="#8b909b">wszystkie trzy pudelka leza w .git/config na TWOIM dysku</text>
+          <text x="14" y="158" font-size="10.5" fill="#8b909b">serwer nie wie o tym skojarzeniu nic &#8212; i nie musi</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Upstream jest notatką lokalną. Dlatego świeży klon ma ją dla gałęzi domyślnej, a dla Twoich nowych — nie.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konsekwencje · co z tego wynika</div>
+    <h2>„Gałąź śledzi zdalną” znaczy mniej, niż brzmi</h2>
+
+    <p>Słowo „śledzi” sugeruje aktywne pilnowanie, jakby git obserwował serwer. Nic takiego się nie dzieje. Skojarzenie mówi tylko, <strong>z czym porównywać i dokąd wysyłać</strong>, a porównanie robi się względem lokalnej kopii stanu serwera — czyli refa <code>origin/*</code>, o którym jest następny rozdział.</p>
+
+    <p>Wynikają stąd dwie rzeczy praktyczne. Po pierwsze, <code>git status</code> może z pełnym przekonaniem twierdzić, że jesteś „up to date”, będąc o tydzień w tyle — bo porównuje z tym, co ostatnio pobrałeś. Po drugie, upstream da się ustawić i zmienić w każdej chwili, także bez pushowania: <code>git branch --set-upstream-to=origin/inna</code>.</p>
+
+    <p>Jest jeszcze trzecia, bardziej praktyczna niż obie poprzednie: skoro to zwykła konfiguracja, to przy zmianie nazwy gałęzi po stronie serwera trzeba ją poprawić u siebie ręcznie. Objawem jest push, który nagle chce utworzyć nową gałąź zdalną zamiast zaktualizować istniejącą.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Skąd biorą się gałęzie zdalne</div>
+    <h2>Jedna linijka konfiguracji, cała mapa</h2>
+
+    <p>W wypisie konfiguracji była linia, którą łatwo przeoczyć, a która odpowiada za całe nazewnictwo <code>origin/*</code>:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>remote.origin.fetch</span><span>reguła odwzorowania</span></div>
+<pre>+refs/heads/*:refs/remotes/origin/*</pre>
+    </div>
+    <p class="konsola-opis">Po lewej to, co jest na serwerze. Po prawej — gdzie ma wylądować u Ciebie.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>refspec przy fetchu</span><span>gwiazdka po obu stronach</span></div>
+      <svg viewBox="0 0 620 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gałęzie serwera odwzorowane na refy zdalne w lokalnym repozytorium">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="24" font-size="10" fill="#6e93be" letter-spacing="1">NA SERWERZE</text>
+          <text x="14" y="48" font-size="10.5" fill="#8b909b">refs/heads/master</text>
+          <text x="14" y="72" font-size="10.5" fill="#8b909b">refs/heads/ABC-1234</text>
+          <text x="14" y="96" font-size="10.5" fill="#8b909b">refs/heads/rc</text>
+
+          <path d="M 200 44 L 268 44" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 261 39 L 271 44 L 261 49 Z" fill="#2a2f38"/>
+          <path d="M 200 68 L 268 68" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 261 63 L 271 68 L 261 73 Z" fill="#2a2f38"/>
+          <path d="M 200 92 L 268 92" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 261 87 L 271 92 L 261 97 Z" fill="#2a2f38"/>
+
+          <text x="286" y="24" font-size="10" fill="#4fc3c0" letter-spacing="1">U CIEBIE</text>
+          <text x="286" y="48" font-size="10.5" fill="#4fc3c0">refs/remotes/origin/master</text>
+          <text x="286" y="72" font-size="10.5" fill="#4fc3c0">refs/remotes/origin/ABC-1234</text>
+          <text x="286" y="96" font-size="10.5" fill="#4fc3c0">refs/remotes/origin/rc</text>
+
+          <text x="14" y="132" font-size="10.5" fill="#8b909b">gwiazdka pasuje do kazdej nazwy &#183; dlatego kazda galaz serwera dostaje</text>
+          <text x="14" y="150" font-size="10.5" fill="#8b909b">swoj lokalny odpowiednik, i to on jest tym, co widzisz jako origin/cos</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Refy zdalne to kopie w osobnej przestrzeni nazw — dlatego nie kolidują z Twoimi gałęziami.</div>
+    </div>
+
+    <p>Ta osobna przestrzeń nazw ma praktyczny sens: możesz mieć własną gałąź <code>master</code> i jednocześnie widzieć <code>origin/master</code>, bez żadnej kolizji. Możesz też mieć więcej niż jedno zdalne repozytorium — <code>origin</code>, <code>upstream</code>, cudzy widelec — i każde z nich dostanie swój własny katalog refów.</p>
+
+    <p>Wynika stąd jeszcze jedno: <strong>refy zdalne są tylko do odczytu</strong>. Nie da się na nich commitować ani ich przestawiać — aktualizuje je wyłącznie rozmowa z serwerem. Jeśli chcesz pracować na gałęzi, którą ktoś wypchnął, musisz założyć własną gałąź lokalną wskazującą na to samo miejsce; robi to <code>git switch ABC-1234</code>, który przy braku takiej gałęzi lokalnej tworzy ją i od razu ustawia upstream.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Jeśli irytuje Cię pamiętanie o <code>-u</code>, ustaw <code>git config --global push.autoSetupRemote true</code>. Wtedy pierwszy push nowej gałęzi sam zapisze skojarzenie, z domyślnym zdalnym repozytorium i tą samą nazwą.</p>
+    <p>Przy sprzątaniu po scalonych gałęziach przydaje się <code>git fetch --prune</code>: usuwa lokalne refy <code>origin/*</code> wskazujące na gałęzie, których na serwerze już nie ma. Bez tego lista gałęzi zdalnych rośnie w nieskończoność i po pół roku nie da się w niej niczego znaleźć.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>upstream</dt><dd>Gałąź zdalna skojarzona z lokalną, zapisana w <code>.git/config</code>.</dd>
+      <dt>remote</dt><dd>Nazwany adres zdalnego repozytorium. <code>origin</code> to tylko konwencjonalna nazwa pierwszego z nich.</dd>
+      <dt>tracking branch</dt><dd>Lokalna gałąź mająca ustawiony upstream. „Śledzenie” oznacza wyłącznie skojarzenie.</dd>
+      <dt>prune</dt><dd>Usunięcie lokalnych refów zdalnych, którym nie odpowiada już nic na serwerze.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Padło już kilka razy zdanie, że <code>origin/master</code> jest lokalny. Następny rozdział bierze je na poważnie — i pokazuje, że połowa mylących liczb w interfejsach bierze się właśnie stąd.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

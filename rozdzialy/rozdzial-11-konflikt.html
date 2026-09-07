@@ -30,7 +30,164 @@
   <h1>Konflikt: co git pokazuje i jak to czytać</h1>
   <p class="subtitle">Konflikt nie jest awarią. Jest miejscem, w którym git odmawia zgadywania — a znaczniki w pliku mówią dokładnie, czyja wersja jest która.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Konflikt nie jest awarią. To miejsce, w którym git <strong>odmawia zgadywania</strong>, bo obie strony zmieniły to samo.</li>
+      <li>Markery w pliku dzielą go na dwie wersje: nad linią <code>=======</code> jest Twoja, pod nią cudza. Nazwa gałęzi po prawej mówi, czyja.</li>
+      <li><code>ours</code> i <code>theirs</code> znaczą co innego przy merge'u niż przy rebasie. Przy rebasie są <strong>zamienione</strong>, bo to Ty jesteś odtwarzany na cudzej podstawie.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Skąd się bierze · trzy wersje, nie dwie</div>
+    <h2>Git porównuje trzy rzeczy naraz</h2>
+
+    <p>Scalając, git nie zestawia dwóch wersji pliku, tylko trzy: Twoją, cudzą i <strong>wspólnego przodka</strong>. Dopiero to pozwala mu rozstrzygnąć większość przypadków samodzielnie. Jeśli linia zmieniła się tylko u Ciebie, bierze Twoją. Jeśli tylko u drugiej strony — jej. Konflikt zgłasza wtedy i tylko wtedy, gdy <em>obie</em> strony zmieniły to samo miejsce inaczej.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>scalanie trojstronne</span><span>przodek jako rozjemca</span></div>
+      <svg viewBox="0 0 620 210" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Wspólny przodek i dwie wersje pliku, z których git wyprowadza wynik">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="222" y="20" width="176" height="44" rx="8" fill="#1b1e24" stroke="#8b909b"/>
+          <text x="310" y="40" text-anchor="middle" font-size="10.5" fill="#ecebe4">wspolny przodek</text>
+          <text x="310" y="56" text-anchor="middle" font-size="9.5" fill="#8b909b">wersja bazowa</text>
+
+          <path d="M 240 70 L 140 106" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 146 100 L 136 108 L 145 112 Z" fill="#2a2f38"/>
+          <path d="M 380 70 L 480 106" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 475 100 L 484 108 L 474 112 Z" fill="#2a2f38"/>
+
+          <rect x="34" y="112" width="176" height="44" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="122" y="132" text-anchor="middle" font-size="10.5" fill="#e8a33d">ours &#183; Twoja</text>
+          <text x="122" y="148" text-anchor="middle" font-size="9.5" fill="#8b909b">wersja B</text>
+
+          <rect x="410" y="112" width="176" height="44" rx="8" fill="#1b1e24" stroke="#6e93be"/>
+          <text x="498" y="132" text-anchor="middle" font-size="10.5" fill="#6e93be">theirs &#183; cudza</text>
+          <text x="498" y="148" text-anchor="middle" font-size="9.5" fill="#8b909b">wersja A</text>
+
+          <text x="310" y="128" text-anchor="middle" font-size="10.5" fill="#8b909b">git pyta o KAZDA linie:</text>
+          <text x="310" y="146" text-anchor="middle" font-size="10.5" fill="#8b909b">kto ja zmienil wzgledem bazy?</text>
+
+          <text x="14" y="188" font-size="10.5" fill="#8b909b">zmienil jeden &#8594; git wybiera sam &#183; zmienili oboje &#8594; konflikt</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Bez wspólnego przodka każda różnica byłaby konfliktem. To on sprawia, że scalanie zwykle przechodzi samo.</div>
+    </div>
+
+    <p>Warto to wiedzieć, bo tłumaczy, dlaczego konflikty pojawiają się rzadziej, niż można by się spodziewać, i dlaczego czasem pojawiają się tam, gdzie „przecież nic nie zmieniałem” — na przykład po zmianie wcięć w całym pliku, gdy z punktu widzenia gita zmieniły się wszystkie linie.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Markery · jak to czytać</div>
+    <h2>Co git wpisuje do pliku</h2>
+
+    <p>Przy konflikcie git zostawia plik na dysku w postaci zawierającej obie wersje, oddzielone trzema liniami znaków:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>plik po konflikcie</span><span>trzy linie markerów</span></div>
+<pre><span class="err">&lt;&lt;&lt;&lt;&lt;&lt;&lt; HEAD</span>
+wersja B
+<span class="err">=======</span>
+wersja A
+<span class="err">&gt;&gt;&gt;&gt;&gt;&gt;&gt; galaz</span></pre>
+    </div>
+    <p class="konsola-opis">Nad <code>=======</code> jest to, co masz. Pod — to, co przychodzi. Etykiety po bokach mówią, skąd każda wersja pochodzi.</p>
+
+    <p>Komunikat w terminalu wygląda tak samo za każdym razem i warto go czytać do końca, bo zawiera nazwę pliku:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git merge</span><span>komunikat</span></div>
+<pre><span class="cmd">git merge galaz</span>
+Auto-merging f.txt
+<span class="err">CONFLICT (content): Merge conflict in f.txt</span>
+Automatic merge failed; fix conflicts and then commit the result.
+
+<span class="cmd">git status --short</span>
+UU f.txt          <span class="komentarz">&#8592; UU: zmienione po obu stronach</span></pre>
+    </div>
+
+    <p>Rozwiązanie konfliktu polega na <strong>zostawieniu w pliku tego, co ma tam być</strong> — i usunięciu wszystkich trzech linii markerów. Nie musisz wybierać jednej ze stron: równie dobrze możesz napisać trzecią wersję, która łączy obie. Git nie sprawdza, co wybrałeś; sprawdza tylko, czy powiedziałeś, że skończyłeś.</p>
+
+    <p>Warto przy tym pamiętać, że plik z markerami jest zwykłym plikiem na dysku i nic nie stoi na przeszkodzie, żeby otworzyć go w edytorze. Narzędzia graficzne do scalania pokazują to samo w trzech kolumnach i bywają wygodne przy dużych konfliktach, ale nie robią nic, czego nie dałoby się zrobić ręcznie — a przy jednym czy dwóch miejscach ich uruchamianie trwa dłużej niż poprawka.</p>
+
+    <p>A mówi się to przez <code>git add</code> — tę samą komendę co zawsze. Dodanie pliku do indeksu jest tu deklaracją „ten plik jest już rozwiązany”. Potem <code>git merge --continue</code> albo <code>git rebase --continue</code> domyka operację. W obu przypadkach dostępne jest też <code>--abort</code>, wracające do stanu sprzed.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pułapka · ours i theirs zamieniają się miejscami</div>
+    <h2>Czyja jest „nasza” wersja</h2>
+
+    <p>Git pozwala rozstrzygnąć konflikt hurtowo: <code>git checkout --ours plik</code> albo <code>--theirs</code>. Nazwy wyglądają na oczywiste i właśnie dlatego są niebezpieczne — <strong>ich znaczenie zależy od operacji</strong>.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Operacja</th><th><code>ours</code> to</th><th><code>theirs</code> to</th></tr></thead>
+        <tbody>
+          <tr><td>merge</td><td>gałąź, na której stoisz</td><td>gałąź, którą scalasz</td></tr>
+          <tr><td>rebase</td><td>gałąź, na którą przenosisz (cudza)</td><td>Twój odtwarzany commit</td></tr>
+          <tr><td>cherry-pick</td><td>gałąź bieżąca</td><td>kopiowany commit</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Drugi wiersz zaskakuje wszystkich. Wynika z tego, że przy rebasie to Ty jesteś odtwarzany na cudzej podstawie — więc z punktu widzenia gita „nasze” jest to, na czym budujesz.</p>
+
+    <p>Praktyczny wniosek: <strong>nie ufaj tym nazwom przy rebasie</strong>. Zamiast zgadywać, spójrz na markery w pliku — etykieta przy <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code> nazywa konkretny commit albo gałąź, a to jest informacja jednoznaczna. Jeżeli i to nie wystarcza, <code>git log --merge -p plik</code> pokazuje commity z obu stron, które dotknęły tego pliku.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zapobieganie · konflikt to skutek, nie przyczyna</div>
+    <h2>Skąd biorą się te trudne</h2>
+
+    <p>Konflikty dzielą się na dwie grupy i warto je rozróżniać, bo wymagają zupełnie różnych reakcji.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>dwa rodzaje</span><span>i co z nimi robic</span></div>
+      <svg viewBox="0 0 620 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Konflikt techniczny i konflikt rzeczywisty jako dwa różne przypadki">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="34" width="286" height="112" rx="10" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="30" y="58" font-size="11" fill="#4fc3c0">techniczny</text>
+          <text x="30" y="82" font-size="10" fill="#8b909b">to samo miejsce, rozne wciecia,</text>
+          <text x="30" y="98" font-size="10" fill="#8b909b">przeniesiona funkcja, koncowki linii</text>
+          <text x="30" y="126" font-size="10" fill="#ecebe4">rozstrzygasz sam, w minute</text>
+
+          <rect x="320" y="34" width="286" height="112" rx="10" fill="#1b1e24" stroke="#d2685a"/>
+          <text x="336" y="58" font-size="11" fill="#d2685a">rzeczywisty</text>
+          <text x="336" y="82" font-size="10" fill="#8b909b">dwie osoby rozwiazaly ten sam</text>
+          <text x="336" y="98" font-size="10" fill="#8b909b">problem na dwa rozne sposoby</text>
+          <text x="336" y="126" font-size="10" fill="#ecebe4">rozstrzygasz z autorem drugiej wersji</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Pierwszy to koszt narzędzia. Drugi to informacja, że ktoś pracował nad tym samym.</div>
+    </div>
+
+    <p>Konflikt techniczny bierze się z tego, że git porównuje linie tekstu, a nie znaczenie kodu. Przeniesienie funkcji o dwadzieścia linii wyżej jest dla niego usunięciem i dodaniem, więc każda cudza zmiana w tej okolicy stanie się konfliktem. Tu odpowiedzią jest po prostu uważne rozstrzygnięcie — i unikanie commitów, które przy okazji przeformatowują pół pliku.</p>
+
+    <p>Konflikt rzeczywisty jest cenniejszy, choć mniej przyjemny: mówi, że dwie osoby niezależnie ruszyły to samo. Rozstrzyganie go w pojedynkę, przez wybranie „swojej” wersji, potrafi po cichu wyrzucić cudzą poprawkę. To jest moment na jedno pytanie zadane autorowi drugiej zmiany, a nie na szybkie <code>--ours</code>.</p>
+
+    <p>Częstotliwość konfliktów zależy zresztą nie od gita, tylko od tego, jak długo gałęzie żyją osobno. Gałąź trzydniowa ma ich mało, trzytygodniowa dużo — i to jest właściwa reakcja na powtarzające się konflikty: skracać gałęzie i częściej nadrabiać zaległości, a nie szukać lepszego narzędzia do scalania.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Najczęstszy błąd przy konflikcie to nie zły wybór wersji, tylko <strong>zostawiony marker</strong>. Linia <code>=======</code> albo <code>&gt;&gt;&gt;&gt;&gt;&gt;&gt;</code>, która pojedzie w commicie, psuje plik i zwykle wychodzi dopiero przy uruchomieniu. Zanim zamkniesz konflikt, wyszukaj ciąg <code>&lt;&lt;&lt;&lt;&lt;&lt;&lt;</code> w całym repozytorium.</p>
+    <p>Konflikt w pliku binarnym nie ma markerów — nie da się ich wstawić do obrazka. Git zgłasza go osobno i wybór sprowadza się do jednej z dwóch wersji: <code>git checkout --ours plik</code> albo <code>--theirs</code>, z uwagą na pułapkę z tabeli powyżej.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>scalanie trójstronne</dt><dd>Porównanie dwóch wersji z ich wspólnym przodkiem. Dzięki niemu większość różnic rozstrzyga się sama.</dd>
+      <dt>markery konfliktu</dt><dd>Trzy linie wstawiane do pliku: początek, granica i koniec. Muszą zniknąć przed commitem.</dd>
+      <dt>UU</dt><dd>Kod w statusie: plik zmieniony po obu stronach i nierozwiązany.</dd>
+      <dt>--continue / --abort</dt><dd>Domknięcie przerwanej operacji albo powrót do stanu sprzed niej.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Ostatni rozdział tej części jest o czytaniu historii — a konkretnie o jednej składni, która odpowiada na najczęstsze pytanie przed wypchnięciem zmian: co dokładnie wysyłam.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

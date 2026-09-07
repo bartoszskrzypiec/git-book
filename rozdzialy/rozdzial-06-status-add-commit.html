@@ -30,7 +30,152 @@
   <h1>status, add, commit — i co naprawdę robi add</h1>
   <p class="subtitle">„Dodaj plik do commita” to złe tłumaczenie. add kopiuje bieżącą treść pliku do indeksu — a to, co zrobisz z plikiem potem, już tam nie trafi.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Cykl <code>status</code> → <code>add</code> → <code>commit</code> powtarzasz kilkanaście razy dziennie. Warto go rozumieć jako <strong>składanie szkicu</strong>, a nie jako zapisywanie pracy.</li>
+      <li><code>git commit -a</code> pomija index — i pomija też pliki nieśledzone. To wygodny skrót, który przy okazji odbiera możliwość zbudowania częściowego commita.</li>
+      <li>Dobry commit to jedna zmiana z jednym powodem. Nie „koniec dnia”, tylko „coś, co da się opisać jednym zdaniem i wycofać w całości”.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Cykl · trzy komendy i jedna decyzja</div>
+    <h2>Co się dzieje między <code>add</code> a <code>commit</code></h2>
+
+    <p>Z Rozdziału 1 wiesz już, że <code>add</code> kopiuje treść do indeksu. Codzienna praca sprowadza się do świadomego korzystania z tego jednego faktu: między zmianą pliku a commitem masz miejsce, w którym decydujesz, <strong>co dokładnie ma wejść</strong>.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>cykl pracy</span><span>gdzie zapada decyzja</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cykl edycja, status, add, commit z zaznaczonym miejscem decyzji">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="60" width="120" height="44" rx="8" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="74" y="87" text-anchor="middle" font-size="11" fill="#ecebe4">edycja</text>
+          <rect x="166" y="60" width="120" height="44" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="226" y="87" text-anchor="middle" font-size="11" fill="#4fc3c0">status</text>
+          <rect x="318" y="60" width="120" height="44" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="378" y="87" text-anchor="middle" font-size="11" fill="#4fc3c0">add</text>
+          <rect x="470" y="60" width="120" height="44" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="530" y="87" text-anchor="middle" font-size="11" fill="#e8a33d">commit</text>
+
+          <path d="M 138 82 L 160 82" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 153 77 L 163 82 L 153 87 Z" fill="#8b909b"/>
+          <path d="M 290 82 L 312 82" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 305 77 L 315 82 L 305 87 Z" fill="#8b909b"/>
+          <path d="M 442 82 L 464 82" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 457 77 L 467 82 L 457 87 Z" fill="#8b909b"/>
+
+          <path d="M 530 112 C 530 150, 74 150, 74 112" stroke="#2a2f38" stroke-width="2" fill="none" stroke-dasharray="4 4"/>
+          <path d="M 69 120 L 74 109 L 79 120 Z" fill="#2a2f38"/>
+
+          <text x="378" y="42" text-anchor="middle" font-size="10" fill="#9c82d8">tu zapada decyzja,</text>
+          <text x="378" y="28" text-anchor="middle" font-size="10" fill="#9c82d8">co wejdzie do commita</text>
+          <text x="304" y="176" text-anchor="middle" font-size="10" fill="#8b909b">i od nowa, kilkanascie razy dziennie</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Trzeci krok jest jedynym, w którym masz coś do wyboru. Reszta wynika.</div>
+    </div>
+
+    <p>Najczęstszy zarzut wobec indeksu brzmi: to zbędny krok, przecież chcę zacommitować wszystko. Git ma na to skrót — <code>git commit -a</code> — który dodaje wszystkie <strong>śledzone</strong> zmienione pliki i od razu buduje commit. Warto tylko wiedzieć, co przy tym tracisz i o czym łatwo zapomnieć.</p>
+
+    <p>Po pierwsze, <code>-a</code> <strong>nie obejmuje plików nieśledzonych</strong>. Nowy plik, którego nigdy nie dodałeś, zostanie pominięty bez słowa. To najczęstsza przyczyna commita, w którym „brakuje pliku” — a właściwie nigdy go tam nie było.</p>
+
+    <p>Po drugie, wszystko wchodzi razem. Jeżeli przy okazji pracy nad jedną rzeczą poprawiłeś przy okazji trzy inne, wylądują w jednym commicie i nie da się ich potem wycofać osobno.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Narzędzie · częściowy commit</div>
+    <h2><code>add -p</code>, czyli wybieranie fragmentów</h2>
+
+    <p>Kiedy w jednym pliku masz dwie niezwiązane zmiany, <code>git add -p</code> przechodzi z Tobą przez plik fragment po fragmencie i pyta o każdy: dodać, pominąć, podzielić na mniejsze. Wynikiem jest index zawierający dokładnie to, co chcesz, przy nietkniętym katalogu roboczym.</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git add -p</span><span>najważniejsze odpowiedzi</span></div>
+<pre>y   <span class="komentarz">dodaj ten fragment</span>
+n   <span class="komentarz">pomin ten fragment</span>
+s   <span class="komentarz">podziel na mniejsze fragmenty</span>
+e   <span class="komentarz">edytuj recznie, co dokladnie wchodzi</span>
+q   <span class="komentarz">zakoncz, zachowujac dotychczasowe decyzje</span></pre>
+    </div>
+    <p class="konsola-opis">Reszta liter jest opisana w podpowiedzi pod znakiem zapytania.</p>
+
+    <p>To jest jedno z niewielu miejsc, w których terminal wyraźnie wygrywa z interfejsem graficznym — choć akurat tę operację część IDE też potrafi, pod nazwą w rodzaju „stage selected lines”. Nazwa jest inna, mechanizm identyczny: budujesz index niezależnie od tego, co masz na dysku.</p>
+
+    <p>Po takim commicie warto pamiętać o rzeczy, która bywa zaskoczeniem: <strong>kod w commicie nigdy nie został uruchomiony w tej postaci</strong>. Testowałeś stan z dysku, a zacommitowałeś jego część. Jeśli commit ma przejść przez zautomatyzowaną kontrolę, wypada sprawdzić, czy sam się kompiluje — <code>git stash -k</code> odkłada wszystko poza indeksem i pozwala to zrobić.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Rozmiar commita · pytanie, na które nie ma reguły</div>
+    <h2>Jedna zmiana, jeden powód</h2>
+
+    <p>Nie ma dobrej odpowiedzi wyrażonej w liczbie linii. Jest natomiast dobre kryterium: <strong>czy da się to opisać jednym zdaniem, które nie zawiera słowa „oraz”</strong>. Jeśli opis brzmi „dodaj eksport i napraw wczytywanie i popraw literówkę”, to są trzy commity.</p>
+
+    <p>Drugie kryterium jest jeszcze bardziej praktyczne: <em>czy dałoby się to wycofać w całości</em>. Commit jest najmniejszą jednostką, którą da się cofnąć jednym <code>revert</code>, przenieść jednym <code>cherry-pick</code> albo wskazać jako winnego przy szukaniu regresji. Jeżeli w środku siedzą dwie niezwiązane rzeczy, każda z tych operacji zaczyna być kompromisem.</p>
+
+    <p>Ma to znaczenie także dla wiadomości. Skoro commit ma jeden powód, to opis może mówić <strong>dlaczego</strong>, a nie co — bo „co” widać w diffie. „Zmień domyślny format zapisu na taki, który czyta starsza wersja narzędzia” jest wart więcej niż „zmiana w konfiguracji”, i to niezależnie od tego, jaki format wiadomości narzuca projekt.</p>
+
+    <p>Formaty bywają zresztą narzucone twardo. Wiele zespołów wymaga prefiksu z numerem zgłoszenia, a serwer potrafi odrzucić push z wiadomością, która się do wzorca nie stosuje. Jak taka kontrola działa i dlaczego dopisanie commita z poprawką jej nie zadowoli, opisuje Rozdział 21.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wiadomość · część commita, nie etykieta</div>
+    <h2>Co warto w niej napisać</h2>
+
+    <p>Wiadomość ma budowę, którą git traktuje poważnie: <strong>pierwsza linia jest tematem</strong>, po niej pusta linia, a dalej opis. Nie jest to konwencja towarzyska — <code>git log --oneline</code>, interfejsy przeglądarkowe i komunikaty scalania biorą właśnie tę pierwszą linię, więc jeśli sklei się ją z resztą, wszędzie pojawi się ścięty w połowie akapit.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>budowa wiadomosci</span><span>gdzie ktora czesc trafia</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Temat, pusta linia i opis, oraz miejsca, w których git używa każdej części">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="30" width="300" height="30" rx="5" fill="#20242c" stroke="#e8a33d"/>
+          <text x="26" y="50" font-size="10.5" fill="#e8a33d">[ABC-1234] Dodaj eksport kamer</text>
+          <rect x="14" y="64" width="300" height="18" rx="5" fill="#20242c" stroke="#2a2f38" stroke-dasharray="3 3"/>
+          <text x="26" y="77" font-size="9.5" fill="#8b909b">(pusta linia)</text>
+          <rect x="14" y="86" width="300" height="52" rx="5" fill="#20242c" stroke="#4fc3c0"/>
+          <text x="26" y="106" font-size="10" fill="#8b909b">Stary format nie czyta sie w wersji</text>
+          <text x="26" y="122" font-size="10" fill="#8b909b">uzywanej przez dzial obok.</text>
+
+          <path d="M 320 45 L 366 45" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 359 40 L 369 45 L 359 50 Z" fill="#2a2f38"/>
+          <text x="378" y="40" font-size="10.5" fill="#e8a33d">log --oneline, listy, MR</text>
+          <text x="378" y="58" font-size="10" fill="#8b909b">to jedyne, co widac domyslnie</text>
+
+          <path d="M 320 112 L 366 112" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 359 107 L 369 112 L 359 117 Z" fill="#2a2f38"/>
+          <text x="378" y="108" font-size="10.5" fill="#4fc3c0">git show, git log</text>
+          <text x="378" y="126" font-size="10" fill="#8b909b">czyta sie przy szukaniu przyczyny</text>
+
+          <text x="14" y="170" font-size="10.5" fill="#8b909b">brak pustej linii = caly tekst staje sie tematem</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Temat odpowiada na „co”, opis na „dlaczego”. Drugiego nie widać w diffie.</div>
+    </div>
+
+    <p>Praktyczna konsekwencja: pisz temat tak, żeby dało się go przeczytać na liście dwudziestu innych. Tryb rozkazujący („Dodaj”, „Popraw”) nie jest kaprysem — pasuje do tego, jak git sam formułuje swoje commity („Merge branch…”, „Revert…”) i pozwala czytać historię jako listę wykonanych operacji.</p>
+
+    <p>Opis warto pisać wtedy, gdy jest co napisać. Jeśli zmiana jest oczywista, sam temat wystarcza. Jeśli wybrałeś jedno z dwóch rozwiązań, odrzuciłeś oczywiste podejście albo obszedłeś cudzy błąd — to jest dokładnie ta wiedza, której za pół roku nikt nie odtworzy z kodu, łącznie z Tobą.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Wyrób sobie nawyk czytania <code>git status</code> jako dwóch osobnych list, a nie jednej ściany tekstu. Górna odpowiada na pytanie „co zacommituję”, dolna — „co mi zostanie po commicie”. Kiedy obie są takie, jak chcesz, commit jest tylko formalnością.</p>
+    <p>Jeśli wpisujesz wiadomość w edytorze, a nie przez <code>-m</code>, pamiętaj, że <strong>pusta wiadomość przerywa commit</strong>. To najprostszy sposób, żeby wycofać się z commita, który zacząłeś przez pomyłkę.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>staging</dt><dd>Dodawanie treści do indeksu. Po polsku bywa „przygotowanie” — w praktyce mówi się „dodać do commita”.</dd>
+      <dt>hunk</dt><dd>Fragment diffa: kilka zmienionych linii z kontekstem. Jednostka, którą operuje <code>add -p</code>.</dd>
+      <dt>commit -a</dt><dd>Skrót: dodaj wszystkie śledzone zmiany i zbuduj commit. Pomija pliki nieśledzone.</dd>
+      <dt>atomowy commit</dt><dd>Commit zawierający jedną zmianę z jednym powodem, dający się wycofać w całości.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Skoro <code>add</code> decyduje, co wchodzi, to wypada wiedzieć, co git w ogóle bierze pod uwagę. Następny rozdział jest o plikach, których nie chcesz w repozytorium — i o tym, dlaczego <code>.gitignore</code> tak często „nie działa”.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">

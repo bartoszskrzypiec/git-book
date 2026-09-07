@@ -30,7 +30,161 @@
   <h1>Merge czy rebase — jedno pytanie, nie religia</h1>
   <p class="subtitle">Obie komendy odpowiadają na to samo pytanie: co zrobić, gdy Twoja praca i cudza praca wyszły z tego samego punktu. Różnią się tym, czy zapisujesz fakt spotkania, czy udajesz, że go nie było.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Obie komendy odpowiadają na to samo pytanie: <strong>co zrobić, gdy Twoja praca i cudza wyszły z tego samego punktu</strong>.</li>
+      <li><code>merge</code> zapisuje fakt spotkania jako nowy commit z dwojgiem rodziców. Twoje commity zachowują swoje skróty. <code>rebase</code> udaje, że rozjazdu nie było — buduje kopie Twoich commitów na cudzym szczycie.</li>
+      <li>Wybór nie jest kwestią gustu. Decyduje o nim jedno pytanie: <strong>czy ktoś już widział te commity</strong>.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Sytuacja wyjściowa · ta sama dla obu</div>
+    <h2>Dwie linie z jednego punktu</h2>
+
+    <p>Odbiłeś gałąź, zrobiłeś commit. W tym czasie ktoś dołożył swój commit do gałęzi głównej. Macie wspólnego przodka i dwie rozchodzące się linie — czyli, słowami Rozdziału 5, jesteście <span class="term-przepis">rodzeństwem</span>.</p>
+
+    <div class="gitviz" data-git-scenario="mergeCzyRebase">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Ta sama sytuacja, dwa wyjścia</p>
+        <p class="gitviz__sub">Krok pokazuje merge. Przycisk obok robi rebase na tym samym stanie wyjściowym.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — oba warianty są opisane w tekście.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="merge">git merge master</button>
+        <button data-git-op="rebase">git rebase master</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Naciśnij „od nowa”, a potem drugi przycisk, żeby zobaczyć oba wyniki na tym samym punkcie startu.</p>
+    </div>
+
+    <p>Zwróć uwagę na to, co widać po obu operacjach. Po merge'u w grafie są <strong>wszystkie oryginalne commity plus jeden nowy</strong>. Po rebase'ie oryginałów już nie ma na gałęzi — są ich kopie o innych skrótach, ustawione w jedną linię, a stare wersje zbladły.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Różnica · co zostaje w historii</div>
+    <h2>Zapis faktu kontra czysta linia</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th></th><th>merge</th><th>rebase</th></tr></thead>
+        <tbody>
+          <tr><td>Twoje commity</td><td>zachowują skróty</td><td>dostają nowe skróty</td></tr>
+          <tr><td>historia</td><td>rozgałęziona, widać spotkanie</td><td>jedna linia, jakby rozjazdu nie było</td></tr>
+          <tr><td>nowe obiekty</td><td>jeden commit scalający</td><td>kopia każdego Twojego commita</td></tr>
+          <tr><td>konflikty</td><td>rozwiązujesz raz</td><td>możesz rozwiązywać przy każdym commicie</td></tr>
+          <tr><td>po wypchnięciu</td><td>zwykły push</td><td>push wymuszony</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Ostatni wiersz jest w praktyce najważniejszy i to on rozstrzyga większość przypadków.</p>
+
+    <p>Argument za rebasem brzmi: historia czytelna, bez plątaniny linii, każdą zmianę widać jako spójny ciąg. Argument za merge'em brzmi: historia prawdziwa, bo naprawdę pracowaliście równolegle, a commit scalający jest jedynym miejscem, w którym widać, że i kiedy to nastąpiło.</p>
+
+    <p>Jest jeszcze czwarty wiersz tabeli, który w praktyce boli najbardziej, a rzadko trafia do dyskusji. Przy merge'u konflikt rozstrzygasz raz, na końcu, mając przed sobą obie gotowe wersje. Przy rebasie git odtwarza Twoje commity po kolei, więc ten sam fragment kodu może zażądać rozstrzygnięcia kilka razy z rzędu — za każdym razem w nieco innym stanie pośrednim, którego nigdy wcześniej nie widziałeś.</p>
+
+    <p>Oba argumenty są sensowne i dlatego spór o nie bywa jałowy. Praktyczne rozstrzygnięcie jest gdzie indziej i wynika z całej trzeciej części tej książki: <strong>rebase przepisuje historię</strong>. Wszystko, co o tym powiedziano — o rodzeństwie, o wymuszonym pushu, o cudzych punktach odniesienia — obowiązuje tu tak samo.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Rozstrzygnięcie · jedno pytanie</div>
+    <h2>Kto już widział te commity</h2>
+
+    <p>Zamiast wybierać ulubioną komendę, warto zadać jedno pytanie i pozwolić mu zdecydować.</p>
+
+    <ul class="compact">
+      <li><strong>Nikt — to moja gałąź, jeszcze niewypchnięta albo wypchnięta tylko dla mnie.</strong> Rebase jest bezpieczny i zwykle lepszy: gałąź zostaje prosta, a przy scalaniu do gałęzi głównej nie ciągnie za sobą historii cudzych zmian.</li>
+      <li><strong>Ktoś — gałąź jest w recenzji, ktoś od niej odbił albo to gałąź wspólna.</strong> Merge. Rebase przestawiłby ludziom punkt odniesienia pod ręką.</li>
+      <li><strong>To gałąź główna.</strong> Nie ma pytania — przepisywanie jej jest wykluczone, a i tak zwykle jest chroniona po stronie serwera.</li>
+    </ul>
+
+    <p>Jest jeszcze przypadek pośredni, wart osobnej wzmianki, bo zdarza się najczęściej: <strong>nadrabianie zaległości na własnej gałęzi</strong>. Gałąź żyje trzy dni, master poszedł do przodu, chcesz mieć aktualny stan. Tu rebase jest zwykle właściwy — a jego alternatywa, czyli wciąganie mastera merge'em, zostawia w Twojej gałęzi commity scalające, które przy przeglądzie zmian tylko przeszkadzają.</p>
+
+    <p>Warto zauważyć, że w zespołach ten wybór zwykle nie jest indywidualny. Projekt ma przyjętą konwencję — historia liniowa albo z merge'ami — a jednostronne odstępstwo od niej daje historię niespójną, która jest gorsza od obu wariantów z osobna. Jeżeli nie wiesz, jaka jest u Ciebie, wystarczy spojrzeć: <code>git log --oneline --graph</code> na gałęzi głównej pokazuje to od razu, bo albo są w niej rozwidlenia, albo nie.</p>
+
+    <p>Rozdział 23 pokazuje, że ten wybór wraca jeszcze raz, i to nie u Ciebie: to samo pytanie rozstrzyga przycisk scalający merge requesta, tyle że decyzję podjął wtedy ktoś inny w ustawieniach projektu.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Trzeci wariant · o którym rzadko się mówi</div>
+    <h2>Czasem nie trzeba robić nic</h2>
+
+    <p>Zanim wybierzesz między dwiema komendami, warto sprawdzić, czy pytanie w ogóle jest aktualne. Jeżeli od Twojego odbicia gałęzi nikt nie tknął gałęzi głównej, <strong>nie ma rozjazdu</strong> — a wtedy zarówno merge, jak i rebase nie mają nic do zrobienia.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy ksztalty</span><span>i co z nich wynika</span></div>
+      <svg viewBox="0 0 620 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy sytuacje: brak rozjazdu, rozjazd rozwiązany merge, rozjazd rozwiązany rebase">
+        <g font-family="IBM Plex Mono, monospace">
+          <text x="14" y="22" font-size="10" fill="#8b909b" letter-spacing="1">BEZ ROZJAZDU</text>
+          <circle cx="46" cy="52" r="15" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="112" cy="52" r="15" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <path d="M 96 52 L 63 52" stroke="#2a2f38" stroke-width="2"/>
+          <text x="152" y="50" font-size="10.5" fill="#8b909b">nic do roboty &#8212; wystarczy push</text>
+          <text x="152" y="66" font-size="10" fill="#8b909b">merge zrobilby fast-forward</text>
+
+          <text x="14" y="106" font-size="10" fill="#4fc3c0" letter-spacing="1">MERGE</text>
+          <circle cx="46" cy="140" r="15" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="112" cy="118" r="15" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <circle cx="112" cy="162" r="15" fill="#1b1e24" stroke="#6e93be" stroke-width="2"/>
+          <circle cx="182" cy="140" r="15" fill="#1b1e24" stroke="#4fc3c0" stroke-width="2"/>
+          <path d="M 96 122 L 63 136" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 96 158 L 63 144" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 167 136 L 129 122" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 167 144 L 129 158" stroke="#2a2f38" stroke-width="2"/>
+          <text x="220" y="138" font-size="10.5" fill="#8b909b">wszystkie oryginaly zostaja,</text>
+          <text x="220" y="154" font-size="10.5" fill="#8b909b">dochodzi commit z dwojgiem rodzicow</text>
+
+          <text x="14" y="196" font-size="10" fill="#9c82d8" letter-spacing="1">REBASE</text>
+          <circle cx="46" cy="214" r="15" fill="#1b1e24" stroke="#8b909b" stroke-width="2"/>
+          <circle cx="112" cy="214" r="15" fill="#1b1e24" stroke="#6e93be" stroke-width="2"/>
+          <circle cx="178" cy="214" r="15" fill="#1b1e24" stroke="#9c82d8" stroke-width="2"/>
+          <path d="M 96 214 L 63 214" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 162 214 L 129 214" stroke="#2a2f38" stroke-width="2"/>
+          <text x="220" y="212" font-size="10.5" fill="#8b909b">jedna linia, ale Twoj commit</text>
+          <text x="220" y="228" font-size="10.5" fill="#8b909b">to KOPIA o nowym skrocie</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Pierwszy przypadek zdarza się częściej, niż się wydaje — i jest jedynym, w którym nic nie powstaje.</div>
+    </div>
+
+    <p>Odróżnienie tych trzech kształtów zajmuje sekundę: <code>git status -sb</code> pokazuje „ahead” i „behind”, a zero w drugiej liczbie oznacza pierwszy przypadek. Warto to sprawdzać, bo odruchowe „zrobię merge z masterem przed pushem” bywa dokładaniem commitów scalających tam, gdzie nie było czego scalać.</p>
+
+    <p>Ostatnia rzecz, o której warto wiedzieć, zanim się cokolwiek wybierze: <strong>obie operacje można cofnąć</strong>. Merge da się odwrócić resetem na commit sprzed niego, rebase również, a w obu przypadkach skrót jest w reflogu. To zdejmuje z tej decyzji ciężar ostateczności — jeżeli wynik nie wygląda tak, jak chciałeś, wracasz i próbujesz drugą drogą.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Jeśli w trakcie rebase'u ten sam konflikt wraca przy kolejnych commitach, to nie awaria — każdy commit jest odtwarzany osobno, więc każdy trafia na tę samą różnicę. Włącz sobie <code>git config --global rerere.enabled true</code>: git zapamięta raz rozwiązany konflikt i zastosuje to samo rozwiązanie przy kolejnych wystąpieniach.</p>
+    <p>Reguła kciuka, która rozstrzyga większość wątpliwości bez namysłu: <em>rebase w stronę własnej gałęzi, merge w stronę wspólnej</em>. Aktualizujesz swoją pracę cudzą — rebase. Wprowadzasz swoją pracę do wspólnej gałęzi — merge, przez merge request.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>commit scalający</dt><dd>Commit z dwojgiem rodziców. Jedyny sposób, w jaki dwie linie łączą się w jedną bez przepisywania.</dd>
+      <dt>rebase</dt><dd>Odtworzenie własnych commitów na innym punkcie bazowym. Powstają kopie o nowych skrótach.</dd>
+      <dt>liniowa historia</dt><dd>Historia bez commitów scalających. Efekt konsekwentnego rebase'owania.</dd>
+      <dt>rerere</dt><dd><em>Reuse recorded resolution</em> — zapamiętywanie rozwiązanych konfliktów i stosowanie ich ponownie.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Obie komendy z tego rozdziału potrafią zatrzymać się na konflikcie. Następny rozdział pokazuje, co git wtedy właściwie wypisuje w pliku, dlaczego akurat tak i którą wersję nazywa „naszą”.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +196,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

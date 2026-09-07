@@ -30,7 +30,174 @@
   <h1>.gitignore, śledzenie i wyjmowanie plików</h1>
   <p class="subtitle">.gitignore nie działa wstecz. Plik raz zacommitowany jest śledzony niezależnie od wzorców — i to jest najczęstsze „dlaczego to dalej widać”.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li><code>.gitignore</code> działa <strong>tylko na pliki nieśledzone</strong>. Plik raz zacommitowany jest śledzony na zawsze, niezależnie od wzorców.</li>
+      <li>Stąd najczęstsze „<code>.gitignore</code> nie działa”: plik wszedł do repozytorium wcześniej. Lekarstwem jest <code>git rm --cached</code>, które usuwa go z indeksu, zostawiając na dysku.</li>
+      <li>Ignorowanie nie jest zakazem. <code>git add -f</code> dodaje plik mimo wzorca — i właśnie tak ignorowane pliki najczęściej trafiają do historii.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Reguła · jedna, i wyjaśnia wszystko</div>
+    <h2>Ignorowanie dotyczy tylko nieśledzonych</h2>
+
+    <p>Git dzieli pliki w katalogu na dwie grupy: te, o których wie (śledzone — są w indeksie), i całą resztę. <strong><code>.gitignore</code> mówi wyłącznie o tej reszcie</strong>: „nie wspominaj mi o tych plikach w statusie i nie dodawaj ich przez <code>add .</code>”.</p>
+
+    <p>Plik, który jest już śledzony, tej reguły nie dotyczy. Git wie o nim, więc pokazuje jego zmiany, choćby pasował do dziesięciu wzorców naraz:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>plik śledzony mimo wzorca</span><span>cache.tmp jest w .gitignore</span></div>
+<pre><span class="cmd">cat .gitignore</span>
+cache.tmp
+
+<span class="cmd">git status --short</span>
+ M cache.tmp        <span class="komentarz">&#8592; sledzony, wiec ignorowanie go nie dotyczy</span></pre>
+    </div>
+    <p class="konsola-opis">Wzorzec jest, plik jest w statusie. To nie usterka, tylko dokładnie ta jedna reguła.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>decyzja gita</span><span>przy kazdym pliku</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Drzewo decyzyjne: czy plik jest śledzony, a jeśli nie, czy pasuje do wzorca">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="76" width="150" height="46" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="89" y="96" text-anchor="middle" font-size="10.5" fill="#4fc3c0">czy jest</text>
+          <text x="89" y="112" text-anchor="middle" font-size="10.5" fill="#4fc3c0">w indeksie?</text>
+
+          <path d="M 168 88 L 226 56" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 220 50 L 230 54 L 224 62 Z" fill="#2a2f38"/>
+          <text x="192" y="56" font-size="10" fill="#8b909b">tak</text>
+          <rect x="234" y="34" width="180" height="40" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="324" y="59" text-anchor="middle" font-size="10.5" fill="#e8a33d">sledzony &#8212; ignore nie dziala</text>
+
+          <path d="M 168 110 L 226 142" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 224 136 L 230 144 L 220 148 Z" fill="#2a2f38"/>
+          <text x="192" y="140" font-size="10" fill="#8b909b">nie</text>
+          <rect x="234" y="120" width="180" height="46" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="324" y="140" text-anchor="middle" font-size="10.5" fill="#4fc3c0">czy pasuje</text>
+          <text x="324" y="156" text-anchor="middle" font-size="10.5" fill="#4fc3c0">do wzorca?</text>
+
+          <path d="M 418 132 L 462 116" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 456 110 L 466 114 L 460 122 Z" fill="#2a2f38"/>
+          <text x="474" y="120" font-size="10.5" fill="#8b909b">ignorowany</text>
+          <path d="M 418 154 L 462 170" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 460 164 L 466 172 L 456 176 Z" fill="#2a2f38"/>
+          <text x="474" y="176" font-size="10.5" fill="#8b909b">niesledzony, widoczny jako ??</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Wzorzec jest brany pod uwagę dopiero w drugim pytaniu. Do pierwszego nie ma nic do powiedzenia.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Naprawa · wyjąć plik z indeksu</div>
+    <h2><code>git rm --cached</code></h2>
+
+    <p>Skoro problemem jest obecność w indeksie, rozwiązaniem jest usunięcie go stamtąd — <strong>bez usuwania pliku z dysku</strong>. Dokładnie to robi <code>git rm --cached</code>:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git rm --cached</span><span>plik zostaje, śledzenie znika</span></div>
+<pre><span class="cmd">git rm --cached cache.tmp</span>
+rm 'cache.tmp'
+
+<span class="cmd">git status --short</span>
+D  cache.tmp        <span class="komentarz">&#8592; usuniecie CZEKA w indeksie, plik nadal jest na dysku</span></pre>
+    </div>
+    <p class="konsola-opis">Po commicie git przestanie o nim wiedzieć i dopiero wtedy wzorzec zacznie działać.</p>
+
+    <p>Warto zrozumieć, co znaczy ten commit. Jest w nim <strong>usunięcie pliku</strong> — dla każdego, kto go pobierze, plik zniknie z katalogu roboczego. Przy pliku z lokalną konfiguracją bywa to niemiła niespodzianka, więc taki commit wypada opisać wprost i uprzedzić zespół.</p>
+
+    <p>Jest jeszcze druga część prawdy, mniej przyjemna: <strong>plik zostaje w historii</strong>. Wszystkie commity, w których był, nadal go zawierają, więc każdy klon nadal ma jego treść. Dla śmieciowego pliku tymczasowego to bez znaczenia. Dla pliku z hasłem — przeciwnie: usunięcie z indeksu nie jest wtedy żadnym zabezpieczeniem, a jedyną poprawną reakcją jest unieważnienie tego hasła.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wzorce · gdzie i w jakiej kolejności</div>
+    <h2>Trzy miejsca na reguły</h2>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Plik</th><th>Zakres</th><th>Dla czego</th></tr></thead>
+        <tbody>
+          <tr><td><code>.gitignore</code> w repo</td><td>wszyscy, jest w commitach</td><td>Wyniki budowania, katalogi cache — rzeczy wspólne dla projektu</td></tr>
+          <tr><td><code>.git/info/exclude</code></td><td>tylko Ty, tylko to repo</td><td>Twoje pliki robocze, których nikt inny nie ma</td></tr>
+          <tr><td>globalny <code>excludesFile</code></td><td>tylko Ty, wszystkie repo</td><td>Śmieci systemu i edytora, takie same wszędzie</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Reguła kciuka: co dotyczy projektu — do repo; co dotyczy Ciebie — poza repo.</p>
+
+    <p>Ta różnica bywa źródłem drobnych, ale męczących sporów. Pliki katalogu <code>.idea/</code> albo <code>.vscode/</code> nie są plikami projektu, tylko Twojego narzędzia, więc ich miejsce jest w konfiguracji globalnej — chyba że zespół świadomie zdecydował, że część z nich chce współdzielić.</p>
+
+    <p>Dwie rzeczy o samych wzorcach warto zapamiętać, bo powodują najwięcej zamieszania. <strong>Ukośnik na końcu</strong> (<code>build/</code>) oznacza wyłącznie katalog. <strong>Wykrzyknik</strong> na początku odwraca regułę (<code>!wazny.log</code>), ale nie zadziała, jeśli wykluczony jest cały katalog nadrzędny — git nie wchodzi do zignorowanego katalogu, więc nie ma szansy zobaczyć wyjątku w środku.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy listy wzorcow</span><span>i ich zasieg</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy zagnieżdżone zakresy: globalny, na repozytorium i wersjonowany w projekcie">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="14" y="26" width="330" height="140" rx="10" fill="none" stroke="#6e93be" stroke-dasharray="4 4"/>
+          <text x="26" y="46" font-size="10" fill="#6e93be">globalny excludesFile &#183; wszystkie Twoje repozytoria</text>
+
+          <rect x="34" y="58" width="290" height="94" rx="10" fill="none" stroke="#4fc3c0" stroke-dasharray="4 4"/>
+          <text x="46" y="78" font-size="10" fill="#4fc3c0">.git/info/exclude &#183; to repo, tylko Ty</text>
+
+          <rect x="54" y="90" width="250" height="46" rx="10" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="66" y="110" font-size="10" fill="#e8a33d">.gitignore &#183; w commitach</text>
+          <text x="66" y="126" font-size="9.5" fill="#8b909b">widzi go caly zespol</text>
+
+          <text x="366" y="60" font-size="10.5" fill="#8b909b">im dalej na zewnatrz,</text>
+          <text x="366" y="78" font-size="10.5" fill="#8b909b">tym mniej osob to dotyczy</text>
+          <text x="366" y="110" font-size="10.5" fill="#8b909b">tylko srodkowy prostokat</text>
+          <text x="366" y="128" font-size="10.5" fill="#8b909b">jedzie z repozytorium</text>
+          <text x="14" y="184" font-size="10.5" fill="#8b909b">smieci edytora naleza na zewnatrz &#183; wyniki budowania do srodka</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Wybór listy to pytanie o zasięg, nie o wygodę.</div>
+    </div>
+
+    <p>Gdy wzorzec nie działa i nie wiadomo dlaczego, git odpowie wprost: <code>git check-ignore -v plik</code> wypisuje regułę, plik i numer linii, która zdecydowała. To jedna komenda zamiast czytania trzech list wzorców.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Przypadek szczególny · pliki, które i tak trafiają</div>
+    <h2>Ignorowanie to nie zakaz</h2>
+
+    <p>Warto zauważyć asymetrię, która zaskakuje przy pierwszym zetknięciu. Ignorowany plik nie pojawia się w statusie i nie zostanie dodany przez <code>git add .</code> — ale <strong>podany wprost z <code>-f</code> wejdzie bez oporu</strong>:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git add</span><span>na pliku pasującym do wzorca</span></div>
+<pre><span class="cmd">git add cache.tmp</span>
+The following paths are ignored by one of your .gitignore files:
+cache.tmp
+hint: Use -f if you really want to add them.</pre>
+    </div>
+    <p class="konsola-opis">Git ostrzega i podpowiada obejście w tej samej wiadomości. Ostrzeżenie jest jedynym zabezpieczeniem.</p>
+
+    <p>To jest projekt świadomy: <code>.gitignore</code> ma odsiewać szum, a nie egzekwować politykę. Jeżeli czegoś naprawdę nie wolno wpuścić do repozytorium — bo to poświadczenie albo plik z hasłem — właściwym miejscem na taką kontrolę jest hook, a nie lista wzorców. Rozdział 20 pokazuje, gdzie takie kontrole żyją i dlaczego te po stronie serwera są jedynymi, których nie da się pominąć.</p>
+
+    <p>Druga rzecz, o którą warto zapytać wcześniej niż później: <strong>czy ten plik w ogóle powinien być w gicie</strong>. Duże pliki binarne — tekstury, cache, wyniki symulacji — zostają w historii na zawsze i w każdym klonie, bo git nie potrafi ich zapisać różnicowo. Odpowiedzią bywa osobny mechanizm przechowywania dużych plików albo trzymanie ich poza repozytorium; ważne, żeby decyzję podjąć przed pierwszym commitem, a nie po roku.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Zakładając nowy projekt, dodaj <code>.gitignore</code> <strong>zanim</strong> zrobisz pierwszy commit. Kolejność odwrotna to najczęstszy sposób, w jaki katalog z wynikami budowania trafia do repozytorium — a potem trzeba go stamtąd wyjmować osobnym commitem i tłumaczyć zespołowi, dlaczego pliki zniknęły im z dysku.</p>
+    <p>Jeśli w statusie jest kilkadziesiąt linii <code>??</code>, potraktuj to jako sygnał, a nie tło. Status, w którym nie da się jednym rzutem oka zobaczyć swojej pracy, przestaje pełnić swoją funkcję — a to on jest w tej książce najczęściej polecanym odruchem.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>śledzony (tracked)</dt><dd>Plik obecny w indeksie. Git zna jego treść i pokazuje zmiany.</dd>
+      <dt>rm --cached</dt><dd>Usunięcie z indeksu z zachowaniem pliku na dysku.</dd>
+      <dt>check-ignore -v</dt><dd>Diagnostyka: która reguła i z którego pliku zdecydowała o zignorowaniu.</dd>
+      <dt>excludesFile</dt><dd>Globalna lista wzorców użytkownika, wskazywana przez konfigurację gita.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Repozytorium masz uporządkowane. Następny rozdział zakłada gałąź funkcyjną od zera i wyjaśnia, skąd <code>git push</code> bez argumentów wie, dokąd właściwie ma wysłać — bo nie wie tego z serwera.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
