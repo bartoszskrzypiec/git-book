@@ -27,7 +27,14 @@ CEL_WIZ = (2, 4)
 def zlicz(path):
     html = io.open(path, encoding='utf-8').read()
     slowa = 0
-    for m in re.finditer(r'<div class="section">(.*?)(?=<div class="section">|<div class="panel|<div class="deeper|<div class="site-nav)', html, re.S):
+    # Koniec sekcji rozpoznajemy po blokach STRUKTURALNYCH. Wzorzec musi
+    # trafiac w class="panel" i class="panel practice", ale NIE w
+    # class="panel-label" - ta klasa siedzi tez w srodku bloku .uwaga, wiec
+    # pierwsza wersja regexa ucinala sekcje w polowie i zaniżala liczbe slow
+    # o kilkaset na kazdej stronie z ostrzezeniem.
+    koniec = (r'(?=<div class="section">|<div class="panel"|<div class="panel '
+              r'|<div class="deeper|<div class="site-nav|<div class="next")')
+    for m in re.finditer(r'<div class="section">(.*?)' + koniec, html, re.S):
         tekst = re.sub(r'<(script|style|svg)\b.*?</\1>', ' ', m.group(1), flags=re.S)
         tekst = re.sub(r'<[^>]+>', ' ', tekst)
         slowa += len(re.findall(r'[0-9A-Za-zĄąĆćĘęŁłŃńÓóŚśŹźŻż]+', tekst))

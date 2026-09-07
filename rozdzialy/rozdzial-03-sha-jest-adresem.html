@@ -30,7 +30,145 @@
   <h1>SHA jest adresem treści</h1>
   <p class="subtitle">Skrót commita nie jest nadanym mu numerem. Jest wyliczony z jego zawartości — więc zmiana jednego znaku w opisie daje inny commit, a nie ten sam commit z poprawką.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>SHA commita nie jest nadanym mu numerem. Jest <strong>wyliczony z jego treści</strong> — z drzewa, rodzica, autora i wiadomości.</li>
+      <li>Wynika z tego zdanie, które wyjaśnia całą trzecią część tej książki: <strong>zmiana czegokolwiek w commicie daje inny commit</strong>, a nie ten sam commit po poprawce.</li>
+      <li>Adresowanie treścią daje przy okazji darmową kontrolę spójności: jeśli obiekt na dysku się zepsuje, jego skrót przestanie się zgadzać i git to zauważy.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Punkt wyjścia · skąd bierze się ten ciąg znaków</div>
+    <h2>Skrót jest funkcją, nie licznikiem</h2>
+
+    <p>Numery w większości systemów, z którymi masz do czynienia, są nadawane: kolejne zgłoszenie dostaje kolejny numer, kolejny wiersz w bazie kolejne id. Gdyby git działał tak samo, poprawienie opisu commita byłoby oczywiste — zmieniasz pole, numer zostaje.</p>
+
+    <p>Git działa inaczej. Bierze całą treść obiektu, przepuszcza ją przez funkcję skrótu i <strong>używa wyniku jako adresu</strong>. Zobaczyć to najłatwiej na blobie, bo blob to sama treść pliku, bez metadanych:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git hash-object</span><span>jeden znak różnicy</span></div>
+<pre><span class="cmd">printf 'wersja 1' | git hash-object --stdin</span>
+<span class="sha">537a94d7bb81fcd78f63a9ecb16f09c0273d8f9d</span>
+
+<span class="cmd">printf 'wersja 2' | git hash-object --stdin</span>
+<span class="sha">2eafb57f9013e37879993a409b634c7c5cf5a0b0</span></pre>
+    </div>
+    <p class="konsola-opis">Wejścia różnią się jedną cyfrą. Wyjścia nie mają ze sobą nic wspólnego.</p>
+
+    <p>Ta druga własność ma nazwę: <strong>efekt lawinowy</strong>. Zmiana jednego bitu wejścia zmienia średnio połowę bitów wyniku. Dzięki temu skróty nie „grupują się” dla podobnych treści i nie da się z samego skrótu wnioskować, jak bardzo dwa obiekty są do siebie zbliżone.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>efekt lawinowy</span><span>jeden znak wejscia</span></div>
+      <svg viewBox="0 0 620 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dwa prawie identyczne teksty dają zupełnie różne skróty">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="10" y="30" width="180" height="40" rx="6" fill="#20242c" stroke="#2a2f38"/>
+          <text x="24" y="55" font-size="12" fill="#ecebe4">wersja <tspan fill="#e8a33d">1</tspan></text>
+          <rect x="10" y="106" width="180" height="40" rx="6" fill="#20242c" stroke="#2a2f38"/>
+          <text x="24" y="131" font-size="12" fill="#ecebe4">wersja <tspan fill="#e8a33d">2</tspan></text>
+
+          <path d="M 196 50 L 236 50" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 229 45 L 239 50 L 229 55 Z" fill="#2a2f38"/>
+          <path d="M 196 126 L 236 126" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 229 121 L 239 126 L 229 131 Z" fill="#2a2f38"/>
+
+          <rect x="242" y="66" width="88" height="44" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="286" y="93" text-anchor="middle" font-size="11" fill="#4fc3c0">SHA-1</text>
+
+          <path d="M 336 88 L 376 50" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 371 43 L 380 47 L 374 55 Z" fill="#2a2f38"/>
+          <path d="M 336 88 L 376 126" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 374 121 L 380 129 L 371 133 Z" fill="#2a2f38"/>
+
+          <rect x="382" y="30" width="228" height="40" rx="6" fill="#20242c" stroke="#e8a33d"/>
+          <text x="396" y="55" font-size="11" fill="#e8a33d">537a94d7bb81fcd78f63…</text>
+          <rect x="382" y="106" width="228" height="40" rx="6" fill="#20242c" stroke="#e8a33d"/>
+          <text x="396" y="131" font-size="11" fill="#e8a33d">2eafb57f9013e3787999…</text>
+
+          <text x="10" y="178" font-size="10.5" fill="#8b909b">podobne wejscia NIE daja podobnych adresow &#183; nie ma &#8222;prawie tego samego&#8221; commita</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Adres nie mówi nic o zawartości poza tym, że ją jednoznacznie identyfikuje.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konsekwencja · to jest cała trzecia część tej książki</div>
+    <h2>Edycja commita nie istnieje</h2>
+
+    <p>Skoro adres wynika z treści, to każda zmiana treści daje inny adres. A obiekt pod innym adresem jest po prostu <strong>innym obiektem</strong>. Nie ma sensownego zdania „ten sam commit z poprawioną wiadomością” — tak samo jak nie ma „ta sama liczba, tylko o jeden większa”.</p>
+
+    <p>Widget poniżej pokazuje to na dwóch krokach. Najpierw poprawiamy opis, potem wracamy do oryginalnego brzmienia. Zwróć uwagę, co się dzieje ze skrótem przy drugim kroku.</p>
+
+    <div class="gitviz" data-git-scenario="adresZTresci">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Ten sam opis daje ten sam adres</p>
+        <p class="gitviz__sub">Dwa kroki: zmiana opisu i powrót do poprzedniego brzmienia.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — mechanizm opisuje tekst obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Skrót wraca do pierwotnej wartości, bo wraca pierwotna treść. Adres jest funkcją zawartości i niczego więcej.</p>
+    </div>
+
+    <p>W widgecie skróty są liczone uproszczoną funkcją, żeby zmieściły się na rysunku, ale zależność jest dokładnie ta sama co w gicie. Przy okazji widać rzecz, która bywa zaskakująca: skoro adres zależy wyłącznie od treści, to <strong>dwa niezależnie zbudowane commity o identycznej zawartości mają identyczny skrót</strong>. W prawdziwym gicie do treści wchodzi jeszcze data, więc zdarza się to rzadko — ale kiedy dwie osoby zrobią <code>cherry-pick</code> tego samego commita w tej samej sekundzie, git potraktuje wynik jako jeden obiekt.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Efekt uboczny · integralność za darmo</div>
+    <h2>Repozytorium sprawdza samo siebie</h2>
+
+    <p>Adresowanie treścią daje coś, czego projektanci gita chcieli od początku, a co w innych systemach wymaga osobnego mechanizmu. Skoro nazwa pliku w <code>.git/objects</code> jest skrótem jego zawartości, to wystarczy tę zawartość ponownie przeliczyć, żeby sprawdzić, czy nic się nie zepsuło. Robi to <code>git fsck</code>.</p>
+
+    <p>Co więcej, ochrona obejmuje całą historię, nie pojedynczy obiekt. Skrót commita zawiera skrót rodzica, skrót rodzica zawiera skrót jego rodzica, i tak aż do korzenia. Podmiana czegokolwiek w starym commicie zmieniłaby jego adres, więc jego dziecko wskazywałoby na nieistniejący obiekt — i tak dalej, po całym łańcuchu. Nie da się po cichu zmienić przeszłości: <strong>trzeba przebudować wszystko, co po niej nastąpiło</strong>.</p>
+
+    <p>To jest dokładnie ta sama właściwość, która jest w tej książce raz zaletą, a raz kłopotem. Zaletą, gdy chroni historię przed uszkodzeniem. Kłopotem, gdy chcesz poprawić literówkę w commicie sprzed dziesięciu innych i okazuje się, że wszystkie dziesięć trzeba zbudować od nowa — o czym mówi Rozdział 14.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Pytanie, które zawsze pada · a co z kolizjami</div>
+    <h2>SHA-1 jest złamany, a git dalej działa</h2>
+
+    <p>SHA-1 uchodzi za funkcję niebezpieczną i słusznie: w 2017 roku pokazano publicznie dwa różne pliki PDF o identycznym skrócie. Skoro adresowanie w gicie stoi na SHA-1, wypada zapytać, czy to nie podważa całej konstrukcji.</p>
+
+    <p>Odpowiedź składa się z trzech części. Po pierwsze, kolizję trzeba <strong>spreparować</strong> — przypadkowe trafienie dwóch obiektów na ten sam skrót jest tak nieprawdopodobne, że nie warto o nim myśleć. Po drugie, git od tamtej pory wykrywa charakterystyczny wzorzec używany w znanym ataku i odmawia zapisania takiego obiektu. Po trzecie i najważniejsze: git ma już zaimplementowany tryb SHA-256 i repozytorium da się dziś utworzyć z takim adresowaniem, choć zgodność z narzędziami nadal bywa niepełna.</p>
+
+    <p>Warto przy okazji zauważyć, czego skrót w gicie <strong>nie robi</strong>: nie jest podpisem i nie potwierdza, kto zbudował commit. Chroni przed uszkodzeniem i przypadkową podmianą, ale ktoś, kto ma prawo zapisu, może zbudować dowolną historię z dowolnymi nazwiskami autorów. Do potwierdzania autorstwa służą podpisy — <code>git commit -S</code> — i to jest zupełnie osobny mechanizm.</p>
+
+    <p>Dla codziennej pracy wniosek jest jeden: skrótom można ufać jako adresom i jako sposobowi wykrycia uszkodzenia. Nie należy ich natomiast traktować jako dowodu, że commit napisała ta osoba, która jest w nim wpisana. Dodatek D rozbiera te trzy wątki po kolei.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Siedmioznakowe skróty, którymi wszyscy się posługują, to tylko początek czterdziestoznakowego adresu. Git przyjmuje dowolny jednoznaczny przedrostek, więc siedem znaków wystarcza aż do bardzo dużych repozytoriów. W razie niejednoznaczności powie wprost, że skrót pasuje do kilku obiektów, i poprosi o więcej znaków — nie wybierze za Ciebie.</p>
+    <p>Nie zapisuj skrótów z tej książki ani z żadnej dokumentacji jako czegoś, co zobaczysz u siebie. W Twoim repozytorium ten sam commit będzie miał inny skrót, bo ma innego autora i inną datę.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>adresowanie treścią</dt><dd>Adres obiektu jest skrótem jego zawartości. Ta sama zawartość zawsze trafia pod ten sam adres.</dd>
+      <dt>efekt lawinowy</dt><dd>Drobna zmiana wejścia zmienia skrót nie do poznania. Dlatego nie ma „podobnych” skrótów.</dd>
+      <dt>skrót skrócony</dt><dd>Siedem pierwszych znaków pełnego adresu. Git akceptuje każdy jednoznaczny przedrostek.</dd>
+      <dt>fsck</dt><dd>Kontrola spójności: przelicza skróty obiektów i sprawdza, czy wszystkie wskaźniki prowadzą do czegoś istniejącego.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Skoro obiekty są niezmienne i zaadresowane treścią, to coś musi być ruchome — inaczej nie dałoby się pracować. Tym czymś są refy, a najważniejszym z nich jest gałąź. Następny rozdział pokazuje, jak niewiele ona waży.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>
@@ -46,5 +184,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

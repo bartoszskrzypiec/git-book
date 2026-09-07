@@ -30,7 +30,151 @@
   <h1>Gałąź to karteczka z adresem</h1>
   <p class="subtitle">Gałąź nie zawiera commitów. Jest plikiem z jednym SHA w środku. HEAD jest karteczką wskazującą na karteczkę — i to wystarcza, żeby wyjaśnić „detached HEAD”.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Gałąź nie zawiera commitów. To plik tekstowy z jednym skrótem w środku — <strong>czterdzieści jeden bajtów</strong> razem ze znakiem końca linii.</li>
+      <li><span class="term-obiekt">HEAD</span> to zwykle wskaźnik na gałąź, a nie na commit. Dzięki temu <code>commit</code> potrafi przesunąć gałąź, na której właśnie stoisz.</li>
+      <li>„Detached HEAD” nie jest awarią. To po prostu HEAD wskazujący prosto na commit, z pominięciem karteczki — i stąd ostrzeżenie, że nowe commity nie mają się czego trzymać.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Obserwacja · zobaczmy tę gałąź</div>
+    <h2>Czterdzieści jeden bajtów</h2>
+
+    <p>Gałąź brzmi jak coś dużego: „gałąź z całą pracą nad tą funkcją”. Można ją jednak po prostu wypisać, bo leży w <code>.git</code> jako zwykły plik:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>refs/heads</span><span>gałąź od środka</span></div>
+<pre><span class="cmd">cat .git/refs/heads/master</span>
+<span class="sha">b9c30732f303dcf5cf4bd526da67b6da07118ca6</span>
+
+<span class="cmd">wc -c .git/refs/heads/master</span>
+41 .git/refs/heads/master
+
+<span class="cmd">cat .git/HEAD</span>
+<span class="ref">ref: refs/heads/master</span></pre>
+    </div>
+    <p class="konsola-opis">Czterdzieści znaków skrótu plus koniec linii. Cała „gałąź z całą pracą”.</p>
+
+    <p>To wszystko. Gałąź to nazwa i jeden adres. Nie ma w niej listy commitów, bo lista nie jest potrzebna — commit wskazany przez gałąź wskazuje na swojego rodzica, ten na swojego, i tak dalej. Historia gałęzi jest <strong>wyliczana przez chodzenie po wskaźnikach</strong>, dokładnie tak samo jak diff w poprzednim rozdziale.</p>
+
+    <p>Stąd bierze się to, o czym mówi się, że w gicie „gałęzie są tanie”. Utworzenie gałęzi to zapisanie czterdziestu jeden bajtów. Nie kopiuje się przy tym niczego, nie tworzy się żadnego commita i nie zmienia się nic w katalogu roboczym.</p>
+
+    <p>Warto od razu zauważyć, że tak samo zbudowane są wszystkie pozostałe refy. Tag to plik w <code>refs/tags</code>, a <code>origin/master</code> — plik w <code>refs/remotes/origin</code>. Różnią się nie budową, tylko regułami: gałąź przesuwasz commitem, tag zwykle zostaje tam, gdzie go postawiono, a refy zdalne aktualizuje wyłącznie rozmowa z serwerem. Zapamiętanie tej jednej symetrii oszczędza sporo zdziwienia w Rozdziale 9, gdzie okaże się, że <code>origin/master</code> jest plikiem na Twoim dysku, a nie oknem na serwer.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Mechanizm · wskaźnik na wskaźnik</div>
+    <h2>HEAD wskazuje na gałąź, gałąź na commit</h2>
+
+    <p>Zauważ, co było w <code>.git/HEAD</code>: nie skrót, tylko <code>ref: refs/heads/master</code>. HEAD jest wskaźnikiem <em>symbolicznym</em> — wskazuje na nazwę gałęzi, a dopiero ta na commit. Ten jeden poziom pośredni załatwia całą mechanikę pracy.</p>
+
+    <div class="gitviz" data-git-scenario="karteczka">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Nowa gałąź, przełączenie, commit</p>
+        <p class="gitviz__sub">Trzy kroki. Zwróć uwagę, kiedy powstaje pierwszy nowy obiekt.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — kolejność zdarzeń opisuje tekst obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="commit">git commit</button>
+        <button data-git-op="branch">git branch proba</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Dwa pierwsze kroki nie tworzą żadnego commita. Powstaje tylko druga karteczka, a potem HEAD na nią przeskakuje.</p>
+    </div>
+
+    <p>Kiedy robisz commit, dzieje się dokładnie to: powstaje nowy obiekt, a git zapisuje jego skrót do pliku gałęzi, na którą wskazuje HEAD. <strong>Gałąź „idzie do przodu” dlatego, że ktoś nadpisuje w niej czterdzieści bajtów</strong> — nie dlatego, że commit został do niej dołączony.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>HEAD &#8594; galaz &#8594; commit</span><span>dwa poziomy posrednie</span></div>
+      <svg viewBox="0 0 620 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="HEAD wskazuje na nazwę gałęzi, gałąź na commit, commit na rodzica">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="12" y="60" width="104" height="40" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="64" y="85" text-anchor="middle" font-size="12" fill="#e8a33d">HEAD</text>
+          <text x="64" y="120" text-anchor="middle" font-size="9.5" fill="#8b909b">.git/HEAD</text>
+
+          <path d="M 120 80 L 168 80" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 161 75 L 171 80 L 161 85 Z" fill="#2a2f38"/>
+          <text x="144" y="70" text-anchor="middle" font-size="9" fill="#8b909b">ref:</text>
+
+          <rect x="174" y="60" width="130" height="40" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="239" y="85" text-anchor="middle" font-size="12" fill="#4fc3c0">master</text>
+          <text x="239" y="120" text-anchor="middle" font-size="9.5" fill="#8b909b">.git/refs/heads/master</text>
+
+          <path d="M 308 80 L 356 80" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 349 75 L 359 80 L 349 85 Z" fill="#2a2f38"/>
+          <text x="332" y="70" text-anchor="middle" font-size="9" fill="#8b909b">sha</text>
+
+          <circle cx="392" cy="80" r="26" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="392" y="84" text-anchor="middle" font-size="10" fill="#e8a33d">b9c3073</text>
+
+          <path d="M 462 80 L 424 80" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 431 75 L 421 80 L 431 85 Z" fill="#2a2f38"/>
+          <circle cx="490" cy="80" r="26" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="490" y="84" text-anchor="middle" font-size="10" fill="#e8a33d">d63f706</text>
+
+          <text x="12" y="152" font-size="10.5" fill="#8b909b">commit przesuwa SRODKOWE pudelko &#183; switch przesuwa LEWE &#183; obiekty po prawej nie ruszaja sie nigdy</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Dwa poziomy pośrednie i jedna zasada: ruszają się tylko wskaźniki.</div>
+    </div>
+
+    <p>Ten rysunek warto mieć w głowie przy każdej komendzie z trzeciej części książki. Wszystkie one — <code>reset</code>, <code>switch</code>, <code>rebase</code>, <code>merge</code> — różnią się wyłącznie tym, <strong>które z tych pudełek przestawiają</strong> i czy przy okazji budują nowe obiekty po prawej stronie. Nic z tego nigdy nie zmienia commita, który już istnieje.</p>
+
+    <p>Przełączenie gałęzi to operacja odwrotna: git zmienia zawartość <code>.git/HEAD</code> na inną nazwę, odczytuje migawkę wskazywanego commita i układa według niej pliki na dysku. Jeżeli obie gałęzie wskazują na ten sam commit — jak w drugim kroku widgetu — na dysku nie zmienia się nic, bo migawka jest ta sama.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Przypadek graniczny · HEAD bez karteczki</div>
+    <h2>Detached HEAD, czyli o co ten alarm</h2>
+
+    <p>Gdy przełączysz się na sam commit — <code>git switch --detach</code>, <code>git checkout &lt;sha&gt;</code> albo kliknięcie w konkretny commit w IDE — HEAD przestaje wskazywać na nazwę i zaczyna wskazywać wprost na obiekt. Git wypisuje wtedy długie ostrzeżenie, które brzmi groźniej, niż jest.</p>
+
+    <p>Stan sam w sobie jest zupełnie normalny i bywa przydatny: chcesz zobaczyć, jak wyglądał projekt przed miesiącem, albo sprawdzić, czy błąd był już wtedy. Dopóki tylko oglądasz, nie ma żadnego ryzyka.</p>
+
+    <p>Ryzyko pojawia się, kiedy w tym stanie <strong>zaczniesz commitować</strong>. Nowe commity powstają normalnie, HEAD przesuwa się po nich, ale nie ma karteczki, która by je trzymała. W chwili, gdy przełączysz się na jakąkolwiek gałąź, te commity zostają bez żadnego wskaźnika — dokładnie jak stary commit po amendzie z Rozdziału 13. Nie znikają od razu, są w reflogu, ale nikt ich już nie pokazuje.</p>
+
+    <p>Lekarstwo jest jednym poleceniem i warto je znać, zanim będzie potrzebne: <code>git switch -c nazwa</code> w stanie odczepionym tworzy gałąź wskazującą na bieżący commit i przypina do niej HEAD. Cała praca zostaje uratowana, bo <strong>nic nie było zepsute</strong> — brakowało tylko karteczki.</p>
+
+    <div class="uwaga">
+      <div class="panel-label">Zanim się przełączysz</div>
+      <p>Jeśli IDE ostrzega, że jesteś w stanie odczepionym, a Ty masz tam commity — najpierw <code>git switch -c</code>, dopiero potem przełączanie się gdziekolwiek indziej. Kolejność odwrotna nie kończy się utratą pracy, ale kończy się szukaniem skrótu w reflogu, co przy odrobinie stresu potrafi zająć kwadrans.</p>
+    </div>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Skoro gałąź to plik z adresem, to „usunięcie gałęzi” jest usunięciem tego pliku, a nie commitów. Dlatego <code>git branch -d</code> jest operacją tanią i odwracalną: dopóki znasz skrót — a masz go w reflogu — odtworzenie gałęzi to <code>git branch nazwa &lt;sha&gt;</code>. Git broni się tylko przed usunięciem gałęzi, której zawartość nie została nigdzie scalona, i właśnie dlatego <code>-D</code> istnieje osobno.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>ref</dt><dd>Nazwana wskazówka na commit. Gałęzie, tagi i <code>origin/*</code> to wszystko refy, różnią się tylko katalogiem i regułami aktualizacji.</dd>
+      <dt>HEAD</dt><dd>Wskaźnik na to, gdzie właśnie jesteś. Zwykle symboliczny — wskazuje nazwę gałęzi.</dd>
+      <dt>detached HEAD</dt><dd>HEAD wskazujący prosto na commit. Commity robione w tym stanie nie mają gałęzi, która by je trzymała.</dd>
+      <dt>fast-forward</dt><dd>Przesunięcie gałęzi wzdłuż istniejącego łańcucha, bez tworzenia czegokolwiek nowego. Wraca w Rozdziale 16.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Masz już oba składniki: niezmienne obiekty i ruchome wskaźniki. Ostatni rozdział tej części nazywa relacje między commitami — przodek, potomek, rodzeństwo — bo bez tych trzech słów nie da się powiedzieć, dlaczego jeden push przechodzi, a drugi zostaje odrzucony.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +186,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

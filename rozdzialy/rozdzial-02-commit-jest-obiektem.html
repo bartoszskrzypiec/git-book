@@ -30,7 +30,159 @@
   <h1>Commit jest obiektem, nie zmianą</h1>
   <p class="subtitle">Commit nie przechowuje tego, co się zmieniło. Przechowuje pełny stan drzewa plików. Diff jest liczony na żądanie — i stąd bierze się połowa zachowań, które wyglądają na magię.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Commit nie przechowuje zmian. Przechowuje <strong>pełny stan drzewa plików</strong> — migawkę — plus wskaźnik na rodzica i wiadomość.</li>
+      <li>Diff, który widzisz w <code>git show</code>, nie jest odczytany z commita. Jest <strong>wyliczony</strong> na żądanie przez porównanie dwóch migawek.</li>
+      <li>Z tego jednego faktu wynika połowa zachowań gita: dlaczego gałęzie są darmowe, dlaczego <code>cherry-pick</code> tworzy kopię i dlaczego przełączanie się między gałęziami jest natychmiastowe.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Obserwacja · zajrzyjmy do środka</div>
+    <h2>Co naprawdę siedzi w commicie</h2>
+
+    <p>Git pozwala wypisać surową treść dowolnego obiektu. Weźmy commit, w którym dopisano jeden nowy plik do projektu, w którym był już inny:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git cat-file -p HEAD^{tree}</span><span>drzewo wskazywane przez commit</span></div>
+<pre><span class="cmd">git cat-file -p HEAD^{tree}</span>
+100644 blob 05cbc965f7555fd45ed507063fe2ea66c319c09d	render.py
+100644 blob ec38e554d70722d68598d651ed0d46b04748242d	scena.usd</pre>
+    </div>
+    <p class="konsola-opis">W commicie „Dodaj renderer” są wymienione <strong>oba</strong> pliki, choć zmienił się tylko jeden.</p>
+
+    <p>To jest cały dowód. Gdyby commit przechowywał zmianę, byłby w nim wyłącznie <code>render.py</code>. Jest w nim natomiast komplet — pełna lista plików projektu w tym momencie, każdy ze skrótem swojej treści. Plik, który się nie zmienił, wskazuje po prostu na <strong>ten sam skrót co poprzednio</strong>, więc nic się nie duplikuje: dwa commity współdzielą jeden obiekt z treścią.</p>
+
+    <p>Stąd nazwa, której warto używać także po polsku: commit jest <span class="term-obiekt">migawką</span>, nie łatką.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Struktura · cztery pola i łańcuch</div>
+    <h2>Commit wskazuje na rodzica</h2>
+
+    <p>Oprócz drzewa commit niesie wskaźnik na commit poprzedni. Ten jeden wskaźnik buduje całą historię — i, co ważne, prowadzi <strong>do tyłu</strong>. Commit wie, skąd przyszedł; nie wie, co powstało po nim.</p>
+
+    <p>Poniższy widget buduje trzy commity po kolei. Patrz na kierunek strzałek: każda biegnie w lewo, do rodzica.</p>
+
+    <div class="gitviz" data-git-scenario="lancuch">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Łańcuch commitów</p>
+        <p class="gitviz__sub">Trzy commity, jeden po drugim. Możesz też dokładać własne.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — łańcuch jest opisany w tekście.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <div class="gitviz__ops">
+        <button data-git-op="commit">git commit</button>
+        <button data-git-op="reset-widget">od nowa</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Pierwszy commit nie ma rodzica — jest korzeniem. Wszystkie kolejne mają dokładnie jednego (poza commitami scalającymi, o których w Rozdziale 10).</p>
+    </div>
+
+    <p>Kierunek strzałek nie jest szczegółem technicznym. To on decyduje o tym, że dopisanie commita jest tanie i lokalne: powstaje nowy obiekt, który wskazuje na istniejący. Żaden ze starych commitów nie musi zostać dotknięty — i dlatego właśnie <strong>nie może</strong> zostać dotknięty, o czym za chwilę.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konsekwencje · skąd się bierze reszta gita</div>
+    <h2>Diff jest wyliczany, nie przechowywany</h2>
+
+    <p>Skoro w commicie nie ma listy zmian, to ta lista musi skądś powstać. Powstaje w momencie, gdy o nią prosisz: <code>git show</code> bierze migawkę commita, migawkę jego rodzica i porównuje je plik po pliku. Ten sam mechanizm obsługuje <code>git diff</code> między dowolnymi dwoma punktami w historii — nie muszą sąsiadować, nie muszą nawet leżeć na jednej gałęzi.</p>
+
+    <p>Trzy praktyczne wnioski, wszystkie z tego samego źródła:</p>
+
+    <ul class="compact">
+      <li><strong>Przełączenie gałęzi jest natychmiastowe.</strong> Git nie odtwarza historii łatka po łatce — bierze gotową migawkę i układa według niej pliki na dysku.</li>
+      <li><strong><code>cherry-pick</code> nie przenosi commita.</strong> Skoro commit jest migawką osadzoną w konkretnym miejscu łańcucha, to „ten sam commit gdzie indziej” nie ma sensu. Powstaje nowy obiekt, o innym rodzicu i innym skrócie — kopia, nie przeprowadzka.</li>
+      <li><strong>Repozytorium nie puchnie od niezmienionych plików.</strong> Sto commitów, w których nie ruszałeś tekstury, to sto drzew wskazujących na jeden i ten sam obiekt z jej treścią.</li>
+    </ul>
+
+    <p>Wnioskiem, który ma jeszcze poważniejsze skutki, jest niezmienność. Gdyby commit dało się zmodyfikować w miejscu, jego skrót przestałby pasować do treści, a wszystkie commity potomne wskazywałyby na coś, czym ten commit już nie jest. Git rozwiązuje to najprostszym możliwym sposobem: obiekty raz zapisane nigdy się nie zmieniają. Cała trzecia część tej książki jest o tym, co robić, kiedy jednak trzeba coś zmienić — i wszystkie odpowiedzi sprowadzają się do budowania nowych obiektów obok starych.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Warstwa niżej · trzy rodzaje obiektów</div>
+    <h2>Commit, drzewo, blob</h2>
+
+    <p>Migawka nie jest jednym wielkim plikiem. Git rozkłada ją na trzy rodzaje obiektów, każdy adresowany swoim skrótem, i to wystarcza, żeby opisać dowolny projekt.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>graf obiektów</span><span>jeden commit, w całości</span></div>
+      <svg viewBox="0 0 620 250" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Commit wskazuje na drzewo, drzewo na dwa bloby i na poddrzewo">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="10" y="96" width="120" height="46" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="70" y="116" text-anchor="middle" font-size="11" fill="#e8a33d">commit</text>
+          <text x="70" y="132" text-anchor="middle" font-size="9.5" fill="#8b909b">b9c3073</text>
+
+          <path d="M 134 119 L 176 119" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 169 114 L 179 119 L 169 124 Z" fill="#2a2f38"/>
+
+          <rect x="182" y="96" width="120" height="46" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="242" y="116" text-anchor="middle" font-size="11" fill="#4fc3c0">tree</text>
+          <text x="242" y="132" text-anchor="middle" font-size="9.5" fill="#8b909b">2b6f655</text>
+
+          <path d="M 306 108 C 340 108, 340 52, 372 52" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 365 47 L 375 52 L 365 57 Z" fill="#2a2f38"/>
+          <path d="M 306 119 L 372 119" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 365 114 L 375 119 L 365 124 Z" fill="#2a2f38"/>
+          <path d="M 306 130 C 340 130, 340 186, 372 186" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 365 181 L 375 186 L 365 191 Z" fill="#2a2f38"/>
+
+          <rect x="378" y="30" width="120" height="44" rx="8" fill="#1b1e24" stroke="#8b909b"/>
+          <text x="438" y="50" text-anchor="middle" font-size="10.5" fill="#ecebe4">blob 05cbc96</text>
+          <text x="438" y="65" text-anchor="middle" font-size="9.5" fill="#8b909b">render.py</text>
+
+          <rect x="378" y="97" width="120" height="44" rx="8" fill="#1b1e24" stroke="#8b909b"/>
+          <text x="438" y="117" text-anchor="middle" font-size="10.5" fill="#ecebe4">blob ec38e55</text>
+          <text x="438" y="132" text-anchor="middle" font-size="9.5" fill="#8b909b">scena.usd</text>
+
+          <rect x="378" y="164" width="120" height="44" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="438" y="184" text-anchor="middle" font-size="10.5" fill="#4fc3c0">tree 91e2a2e</text>
+          <text x="438" y="199" text-anchor="middle" font-size="9.5" fill="#8b909b">tekstury/</text>
+
+          <text x="10" y="234" font-size="10.5" fill="#8b909b">blob nie zna swojej nazwy &#183; nazwe nadaje mu wpis w drzewie</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Katalog to drzewo, plik to blob. Podkatalog jest po prostu kolejnym drzewem.</div>
+    </div>
+
+    <p>Ta budowa ma jedną własność, która wygląda na drobiazg, a jest fundamentem: <strong>blob nie zna swojej nazwy</strong>. Nazwa istnieje wyłącznie jako wpis w drzewie. Dlatego dwa identyczne pliki w różnych katalogach to jeden obiekt na dysku, a zmiana nazwy pliku bez zmiany treści nie tworzy nowego bloba — tworzy tylko nowe drzewo. Git nie przechowuje informacji o zmianie nazwy; wykrywa ją potem, porównując treści, i dlatego czasem ją przeoczy, a czasem zobaczy tam, gdzie jej nie było.</p>
+
+    <p>Wszystkie te obiekty leżą w <code>.git/objects</code>, zaadresowane swoimi skrótami. Nie ma tam osobnej bazy danych, dziennika ani indeksu w sensie bazodanowym — jest zawartość pod adresami wyliczonymi z tej zawartości. Dodatek C zwiedza ten katalog z komendami w ręku.</p>
+
+    <p>Podział na trzy rodzaje obiektów tłumaczy też, dlaczego git bywa nieprzyjemny dla dużych plików binarnych. Zmiana jednego piksela w teksturze daje całkiem nowego bloba z całą jej treścią, bo blob jest niepodzielny — nie ma czegoś takiego jak częściowa aktualizacja obiektu. Przy tekście nie ma to znaczenia, bo pakowanie repozytorium potrafi potem zapisać podobne bloby różnicowo. Przy skompresowanym pliku binarnym nie potrafi, i historia takiego pliku waży tyle, ile suma wszystkich jego wersji.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Kiedy następnym razem zobaczysz w interfejsie IDE „commit zawiera 6 plików”, przetłumacz to sobie na: <em>diff względem rodzica dotyczy sześciu plików</em>. Sam commit zawiera cały projekt. Ta drobna zmiana w głowie tłumaczy z góry, dlaczego liczba plików w commicie potrafi wyglądać inaczej po rebasie — bo zmienił się rodzic, więc zmieniło się to, z czym git porównuje.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>migawka (snapshot)</dt><dd>Pełny stan drzewa plików zapisany w commicie, w odróżnieniu od listy zmian.</dd>
+      <dt>blob</dt><dd>Obiekt z treścią jednego pliku. Nie zna swojej nazwy — nazwę nadaje mu drzewo.</dd>
+      <dt>tree</dt><dd>Obiekt z listą wpisów: prawa, typ, skrót i nazwa. Odpowiednik katalogu.</dd>
+      <dt>rodzic (parent)</dt><dd>Commit, na który wskazuje bieżący. Commit początkowy nie ma żadnego, commit scalający ma dwóch.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Skoro commit ma skrót, wypada zapytać, skąd ten skrót się bierze. Odpowiedź jest krótka i ma zaskakująco daleko idące skutki: nie jest nadawany, tylko liczony z treści. To jest temat następnego rozdziału i fundament wszystkiego, co robi <code>--amend</code>.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>
@@ -46,5 +198,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

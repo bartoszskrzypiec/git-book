@@ -30,7 +30,156 @@
   <h1>Graf: rodzic, potomek, rodzeństwo</h1>
   <p class="subtitle">Historia w gicie nie jest listą, tylko grafem skierowanym. Kilka słów o pokrewieństwie commitów wyjaśnia z góry, dlaczego jeden push przechodzi, a drugi zostaje odrzucony.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Historia w gicie nie jest listą, tylko <strong>grafem skierowanym</strong>: każdy commit wskazuje na rodzica, nigdy odwrotnie.</li>
+      <li>Trzy relacje wystarczają, żeby opisać wszystko, co dzieje się dalej w tej książce: <strong>przodek</strong>, <strong>potomek</strong> i <strong>rodzeństwo</strong>.</li>
+      <li>Cała różnica między pushem, który przechodzi, a takim, który zostaje odrzucony, sprowadza się do jednego pytania: czy commit na serwerze jest moim przodkiem?</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Nazwy · trzy słowa, które trzeba mieć</div>
+    <h2>Przodek, potomek, rodzeństwo</h2>
+
+    <p>Weź dowolne dwa commity. Są dokładnie trzy możliwości i warto umieć je rozpoznać na rysunku, bo każda z nich pociąga za sobą inne zachowanie gita.</p>
+
+    <ul class="compact">
+      <li><strong>A jest przodkiem B</strong> — idąc od B po wskaźnikach rodziców, prędzej czy później trafisz na A. B zawiera w sobie całą historię A.</li>
+      <li><strong>A jest potomkiem B</strong> — to samo zdanie odwrócone. Jeżeli A jest potomkiem B, to przejście z B do A jest zwykłym przewinięciem do przodu.</li>
+      <li><strong>Rodzeństwo</strong> — żadne z powyższych. Oba commity mają wspólnego przodka, ale rozeszły się i żadne nie zawiera drugiego.</li>
+    </ul>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>relacje w grafie</span><span>strzalka biegnie do rodzica</span></div>
+      <svg viewBox="0 0 620 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Graf commitów z rozgałęzieniem: wspólny przodek, dwie linie potomków, rodzeństwo">
+        <g font-family="IBM Plex Mono, monospace">
+          <path d="M 106 110 L 62 110" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 69 105 L 59 110 L 69 115 Z" fill="#2a2f38"/>
+          <path d="M 206 110 L 162 110" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 169 105 L 159 110 L 169 115 Z" fill="#2a2f38"/>
+          <path d="M 306 66 C 270 66, 262 110, 232 110" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 239 105 L 229 110 L 239 115 Z" fill="#2a2f38"/>
+          <path d="M 306 158 C 270 158, 262 110, 232 110" stroke="#2a2f38" stroke-width="2" fill="none"/>
+          <path d="M 239 105 L 229 110 L 239 115 Z" fill="#2a2f38"/>
+          <path d="M 406 66 L 362 66" stroke="#2a2f38" stroke-width="2"/>
+          <path d="M 369 61 L 359 66 L 369 71 Z" fill="#2a2f38"/>
+
+          <circle cx="36" cy="110" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="36" y="114" text-anchor="middle" font-size="11" fill="#e8a33d">A</text>
+          <circle cx="136" cy="110" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="136" y="114" text-anchor="middle" font-size="11" fill="#e8a33d">B</text>
+          <circle cx="236" cy="110" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="236" y="114" text-anchor="middle" font-size="11" fill="#e8a33d">C</text>
+          <circle cx="336" cy="66" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="336" y="70" text-anchor="middle" font-size="11" fill="#e8a33d">D</text>
+          <circle cx="436" cy="66" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="436" y="70" text-anchor="middle" font-size="11" fill="#e8a33d">E</text>
+          <circle cx="336" cy="158" r="20" fill="#1b1e24" stroke="#e8a33d" stroke-width="2"/>
+          <text x="336" y="162" text-anchor="middle" font-size="11" fill="#e8a33d">F</text>
+
+          <text x="478" y="52" font-size="10.5" fill="#8b909b">C jest przodkiem D, E i F</text>
+          <text x="478" y="72" font-size="10.5" fill="#8b909b">E jest potomkiem A, B, C i D</text>
+          <text x="478" y="92" font-size="10.5" fill="#9c82d8">D i F to rodzenstwo</text>
+          <text x="478" y="112" font-size="10.5" fill="#8b909b">ich wspolny przodek to C</text>
+
+          <text x="16" y="206" font-size="10.5" fill="#8b909b">E i F nie sa ze soba w zadnej relacji przodek-potomek &#8212; zadne nie zawiera drugiego</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Jedno rozgałęzienie wystarczy, żeby zobaczyć wszystkie trzy relacje naraz.</div>
+    </div>
+
+    <p>Zwróć uwagę na jedną rzecz w tym rysunku: <strong>strzałki biegną w lewo</strong>, do rodziców. Commit C nie wie, że mają go za przodka D i F. Dlatego pytanie „co powstało po tym commicie” jest w gicie kosztowne — trzeba przejrzeć wszystkie gałęzie i sprawdzić, które przez niego przechodzą — a pytanie „co było przed” jest natychmiastowe.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Zastosowanie · to jedno pytanie wraca bez przerwy</div>
+    <h2>Czy to jest mój przodek?</h2>
+
+    <p>Kiedy już masz te trzy słowa, sporo zachowań gita da się przewidzieć bez zaglądania do dokumentacji, bo wszystkie sprowadzają się do tego samego pytania.</p>
+
+    <div class="dtab-wrap">
+      <table class="dtab">
+        <thead><tr><th>Sytuacja</th><th>Pytanie, które zadaje git</th><th>Skutek</th></tr></thead>
+        <tbody>
+          <tr><td>push</td><td>Czy commit na serwerze jest przodkiem mojego?</td><td>Tak — przechodzi. Nie — odmowa.</td></tr>
+          <tr><td>merge</td><td>Czy tamten commit jest już moim przodkiem?</td><td>Tak — nie ma nic do roboty. Nie — powstaje commit scalający.</td></tr>
+          <tr><td>usunięcie gałęzi</td><td>Czy jej szczyt jest przodkiem czegoś, co zostaje?</td><td>Tak — usuwa. Nie — ostrzega, że praca zginie.</td></tr>
+          <tr><td>rebase</td><td>Gdzie jest wspólny przodek moich commitów i celu?</td><td>Od tego miejsca w górę wszystko budowane od nowa.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="dtab-caption">Cztery różne komendy, jedno pytanie o pokrewieństwo.</p>
+
+    <p>Ta sama tabela tłumaczy też, dlaczego niektóre operacje są natychmiastowe, a inne potrafią się zamyślić. Sprawdzenie, czy jeden commit jest przodkiem drugiego, wymaga w najgorszym razie przejścia całej historii wstecz — a to w dużym repozytorium jest naprawdę dużo węzłów. Dlatego git trzyma pomocnicze struktury przyspieszające takie pytania i dlatego pierwsza operacja po świeżym klonie bywa wyraźnie wolniejsza od kolejnych.</p>
+
+    <p>Git odpowiada na nie także wprost. <code>git merge-base --is-ancestor A B</code> kończy się powodzeniem, jeśli A jest przodkiem B, a <code>git merge-base A B</code> wypisuje ich najbliższego wspólnego przodka. Rzadko wpisuje się to ręcznie, ale w skrypcie albo przy diagnozowaniu dziwnego zachowania to jest ta komenda, która odpowiada na właściwe pytanie.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Skąd bierze się rodzeństwo</div>
+    <h2>Nie tylko z pracy w zespole</h2>
+
+    <p>Rodzeństwo kojarzy się z sytuacją, w której dwie osoby pracują równolegle — i rzeczywiście tak powstaje najczęściej. Ale powstaje też <strong>bez udziału kogokolwiek innego</strong>, za każdym razem, gdy przepisujesz historię.</p>
+
+    <div class="gitviz" data-git-scenario="rodzenstwo">
+      <div class="gitviz__head">
+        <p class="gitviz__title">Rodzeństwo z jednego amendu</p>
+        <p class="gitviz__sub">Jeden krok. Nikt inny nie brał w tym udziału.</p>
+      </div>
+      <div class="gitviz__stage">
+        <div class="gitviz__fallback">
+          <strong>Ten widget potrzebuje JavaScriptu</strong>
+          <span>Rozdział jest kompletny bez niego — sytuację opisuje tekst obok.</span>
+        </div>
+      </div>
+      <div class="gitviz__steps">
+        <button data-git-step="prev" aria-label="Krok wstecz">←</button>
+        <span data-git-label></span>
+        <span class="licznik"></span>
+        <button data-git-step="next" aria-label="Krok dalej">→</button>
+      </div>
+      <pre class="gitviz__out" data-git-out></pre>
+      <p class="gitviz__note">Dwa commity, ten sam rodzic, żaden nie pochodzi od drugiego. To jest definicja rodzeństwa.</p>
+    </div>
+
+    <p>To jest cała zapowiedź trzeciej części tej książki. Każda operacja, która „poprawia” historię, produkuje rodzeństwo: nowy commit obok starego, z tym samym rodzicem. Dopóki nikt poza Tobą nie widział tego starego, nie ma z tym żadnego problemu. Kłopot zaczyna się dokładnie w momencie, gdy stary commit zdążył gdzieś wyjechać — bo wtedy dwa równorzędne warianty tej samej pracy istnieją w dwóch miejscach naraz, a git nie ma podstaw, żeby zgadnąć, który jest właściwy.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Wyjątek · commit z dwojgiem rodziców</div>
+    <h2>Miejsce, w którym graf się zbiega</h2>
+
+    <p>Do tej pory każdy commit miał jednego rodzica, a commit początkowy nie miał żadnego. Jest jeszcze trzeci przypadek: <strong>commit scalający ma dwóch</strong>. To jedyny sposób, w jaki dwie rozeszłe się linie mogą się z powrotem połączyć w jeden punkt.</p>
+
+    <p>Ma to dwie konsekwencje, które warto znać zawczasu. Pierwsza: commit scalający jest zapisem <em>faktu</em>, że w tym miejscu spotkały się dwie historie. Nie da się go pomylić z niczym innym i nie da się go zgubić — dlatego historia z merge'ami wiernie oddaje to, co się działo, kosztem czytelności rysunku.</p>
+
+    <p>Druga jest bardziej praktyczna: skoro taki commit ma dwóch rodziców, to pytania w rodzaju „co się w nim zmieniło” przestają mieć jedną odpowiedź. <code>git show</code> na commicie scalającym domyślnie nie pokazuje nic, bo względem jednego rodzica zmieniło się jedno, a względem drugiego coś zupełnie innego. To nie jest usterka narzędzia, tylko uczciwe przyznanie, że pytanie było źle postawione.</p>
+
+    <p>Wybór między zapisaniem tego faktu a udawaniem, że linie nigdy się nie rozeszły, to cała treść Rozdziału 10 — i pierwsza decyzja w tej książce, która nie ma jednej poprawnej odpowiedzi.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>Kiedy zobaczysz komunikat ze słowem „diverged” albo „non-fast-forward”, przetłumacz go od razu na jedno zdanie: <em>to, co mam, i to, co tam leży, jest rodzeństwem</em>. Wtedy pytanie przestaje brzmieć „co poszło nie tak”, a zaczyna brzmieć „którą wersję chcę zachować i co zrobić z drugą” — a na to są dokładnie trzy odpowiedzi: scalić, przepisać albo wymusić.</p>
+    <p>Najszybszy sposób, żeby to zobaczyć: <code>git log --oneline --graph --all --decorate</code>. Rozjazd widać jako rozwidlenie linii, a nazwy gałęzi jako etykiety przy węzłach.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>graf skierowany acykliczny (DAG)</dt><dd>Formalna nazwa struktury historii gita. Skierowany, bo strzałki mają kierunek; acykliczny, bo commit nie może być swoim przodkiem.</dd>
+      <dt>wspólny przodek (merge base)</dt><dd>Najbliższy commit, od którego obie linie się rozeszły. Punkt odniesienia dla scalania i rebase'u.</dd>
+      <dt>rozjazd (diverged)</dt><dd>Stan, w którym dwie gałęzie są rodzeństwem: obie mają commity, których nie ma ta druga.</dd>
+      <dt>osiągalność</dt><dd>Czy da się dojść do commita idąc po wskaźnikach rodziców. Commit nieosiągalny z żadnego refa jest kandydatem do usunięcia przy sprzątaniu.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Model jest kompletny: niezmienne obiekty, ruchome wskaźniki i graf pokrewieństwa. Druga część wraca do rzeczy, które robisz codziennie — ale opisuje je już przez to, co robią z tym grafem, a nie przez kolejność klikania.</p>
+  </div>
 
 
   <div class="site-nav chapter-nav">
@@ -42,5 +191,9 @@
 </div>
 
 <script src="../assets/interactive.js"></script>
+<script type="module">
+  import { montuj } from '../assets/gitgraph.js';
+  montuj();
+</script>
 </body>
 </html>

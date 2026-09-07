@@ -29,7 +29,182 @@
   <h1>Trzy drzewa: katalog roboczy, index, HEAD</h1>
   <p class="subtitle">Git nie ma dwóch stanów („zapisane” i „niezapisane”), tylko trzy. Prawie każde zaskoczenie w codziennej pracy bierze się z pomylenia dwóch z nich.</p>
 
-  <!-- TRESC -->
+  <div class="panel">
+    <div class="panel-label">TL;DR</div>
+    <ul>
+      <li>Git trzyma trzy stany naraz: <span class="term-ref">katalog roboczy</span> (pliki na dysku), <span class="term-ref">index</span> (to, co wejdzie do następnego commita) i <span class="term-obiekt">HEAD</span> (ostatni commit).</li>
+      <li><code>git add</code> nie „zaznacza pliku”. Kopiuje jego <strong>bieżącą treść</strong> do indeksu. Jeśli potem plik zmienisz, ta zmiana w indeksie nie ląduje.</li>
+      <li>Prawie każde zaskoczenie w codziennej pracy — „przecież dodałem”, „dlaczego to nie weszło” — to pomylenie dwóch z tych trzech miejsc.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Obserwacja · jeden plik w dwóch sekcjach naraz</div>
+    <h2>Status pokazuje coś, co wygląda na błąd</h2>
+
+    <p>Dodajesz plik, potem jeszcze coś w nim poprawiasz, patrzysz w <code>git status</code> i widzisz ten sam plik wymieniony dwa razy — raz jako gotowy do commita, raz jako zmodyfikowany:</p>
+
+    <div class="konsola">
+      <div class="konsola-label"><span>git status</span><span>po edycji pliku, który już był dodany</span></div>
+<pre><span class="cmd">git status</span>
+On branch master
+
+Changes to be committed:
+  (use "git rm --cached &lt;file&gt;..." to unstage)
+	new file:   scena.usd
+
+Changes not staged for commit:
+  (use "git add &lt;file&gt;..." to update what will be committed)
+  (use "git restore &lt;file&gt;..." to discard changes in working directory)
+	modified:   scena.usd</pre>
+    </div>
+    <p class="konsola-opis">Ten sam plik, dwie sekcje. W skróconej postaci (<code>git status --short</code>) wygląda to jeszcze zwięźlej: <code>AM scena.usd</code>.</p>
+
+    <p>To nie jest błąd i nie jest to nawet nietypowe. Git po prostu odpowiada na dwa różne pytania naraz: <em>czym różni się to, co zacommituję, od ostatniego commita</em> — i <em>czym różni się to, co mam na dysku, od tego, co zacommituję</em>. Odpowiedzi są różne, bo między dyskiem a commitem stoi jeszcze jedno miejsce.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Mechanizm · trzy miejsca, nie dwa</div>
+    <h2>Katalog roboczy, index, HEAD</h2>
+
+    <p>Większość ludzi ma w głowie model dwustanowy: „u mnie” i „zapisane w gicie”. Git ma trzy, a nazwy, których używa dokumentacja, akurat tutaj bardziej mylą, niż pomagają.</p>
+
+    <ul class="compact">
+      <li><strong>Katalog roboczy</strong> — pliki, które widzi edytor. To jedyne miejsce, które możesz otworzyć i przeczytać zwykłym programem.</li>
+      <li><strong>Index</strong> (inaczej <em>staging area</em> albo <em>cache</em> — trzy nazwy na jedno) — jeden plik binarny, <code>.git/index</code>, w którym git trzyma listę ścieżek i skrótów treści. To jest szkic następnego commita.</li>
+      <li><strong>HEAD</strong> — wskaźnik na ostatni commit bieżącej gałęzi. Punkt odniesienia, względem którego liczy się „co się zmieniło”.</li>
+    </ul>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>trzy drzewa</span><span>komendy jako ruch między nimi</span></div>
+      <svg viewBox="0 0 620 260" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Trzy prostokąty: katalog roboczy, index i HEAD, połączone strzałkami add, commit oraz restore i reset">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="16" y="60" width="150" height="86" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="91" y="90" text-anchor="middle" font-size="12" fill="#4fc3c0">katalog</text>
+          <text x="91" y="106" text-anchor="middle" font-size="12" fill="#4fc3c0">roboczy</text>
+          <text x="91" y="128" text-anchor="middle" font-size="10" fill="#8b909b">to widzi edytor</text>
+
+          <rect x="235" y="60" width="150" height="86" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="310" y="98" text-anchor="middle" font-size="12" fill="#4fc3c0">index</text>
+          <text x="310" y="128" text-anchor="middle" font-size="10" fill="#8b909b">szkic commita</text>
+
+          <rect x="454" y="60" width="150" height="86" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="529" y="98" text-anchor="middle" font-size="12" fill="#e8a33d">HEAD</text>
+          <text x="529" y="128" text-anchor="middle" font-size="10" fill="#8b909b">ostatni commit</text>
+
+          <path d="M 170 90 L 228 90" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 220 85 L 231 90 L 220 95 Z" fill="#8b909b"/>
+          <text x="199" y="80" text-anchor="middle" font-size="11" fill="#ecebe4">add</text>
+
+          <path d="M 389 90 L 447 90" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 439 85 L 450 90 L 439 95 Z" fill="#8b909b"/>
+          <text x="418" y="80" text-anchor="middle" font-size="11" fill="#ecebe4">commit</text>
+
+          <path d="M 228 124 L 170 124" stroke="#9c82d8" stroke-width="2"/>
+          <path d="M 178 119 L 167 124 L 178 129 Z" fill="#9c82d8"/>
+          <text x="199" y="142" text-anchor="middle" font-size="11" fill="#9c82d8">restore</text>
+
+          <path d="M 447 124 L 389 124" stroke="#9c82d8" stroke-width="2"/>
+          <path d="M 397 119 L 386 124 L 397 129 Z" fill="#9c82d8"/>
+          <text x="418" y="142" text-anchor="middle" font-size="11" fill="#9c82d8">reset</text>
+
+          <text x="16" y="196" font-size="11" fill="#8b909b">git status porownuje SASIADOW: katalog z indeksem i index z HEAD-em.</text>
+          <text x="16" y="216" font-size="11" fill="#8b909b">Dlatego jeden plik potrafi pojawic sie w obu porownaniach naraz.</text>
+          <text x="16" y="240" font-size="11" fill="#8b909b">git diff = katalog vs index &#183; git diff --staged = index vs HEAD</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Komendy z górnego rzędu przesuwają treść w prawo, z dolnego — w lewo.</div>
+    </div>
+
+    <p>Index nie jest metaforą ani abstrakcją. To konkretny plik, który da się podejrzeć — <code>git ls-files -s</code> wypisuje jego zawartość: prawa dostępu, skrót treści i ścieżkę. Skrót w tym wypisie jest skrótem <strong>treści zapamiętanej w momencie <code>add</code></strong>, a nie treści leżącej w tej chwili na dysku. Stąd bierze się cała reszta rozdziału.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Konsekwencje · co z tego wynika w praktyce</div>
+    <h2>„Przecież dodałem ten plik”</h2>
+
+    <p>Skoro <code>add</code> kopiuje treść, to sekwencja: dodaj plik, popraw w nim jeszcze jedną linijkę, zacommituj — daje commit <strong>bez</strong> tej ostatniej linijki. Plik jest w commicie, więc wszystko wygląda dobrze, tylko zawartość jest o jedną poprawkę starsza. To najczęstsza przyczyna commita, który „na pewno zawierał tę zmianę”, a nie zawierał.</p>
+
+    <p>Odruch, który to rozbraja, jest jeden: <strong>zerknij w status tuż przed commitem</strong>. Jeżeli plik jest tylko w górnej sekcji, wszystko z niego wejdzie. Jeżeli widnieje w obu — wejdzie wersja sprzed Twojej ostatniej edycji.</p>
+
+    <p>Ta sama właściwość jest jednak powodem, dla którego index w ogóle istnieje, i bywa bardzo wygodna. Możesz przygotować commit z <em>części</em> tego, co masz na dysku: dodać dwa pliki z pięciu, albo — przez <code>git add -p</code> — wybrane fragmenty jednego pliku. Reszta zmian zostaje w katalogu roboczym i poczeka na następny commit. Bez osobnego miejsca na szkic nie dałoby się tego zrobić inaczej niż przez ręczne chowanie plików.</p>
+
+    <p>Warto też zauważyć, czego na tym rysunku <strong>nie ma</strong>: żadna z tych trzech rzeczy nie jest zdalna. Wszystkie trzy leżą na Twoim dysku i wszystkie trzy działają bez sieci. Serwer pojawi się dopiero w czwartej części tej książki i będzie miał zupełnie inne zdanie na temat tego, co wolno.</p>
+  </div>
+
+  <div class="section">
+    <div class="section-eyebrow">Uporządkowanie · cztery stany, w których bywa plik</div>
+    <h2>Nieśledzony, zmodyfikowany, w indeksie, zacommitowany</h2>
+
+    <p>Trzy drzewa dają się przełożyć na cztery stany, w których git widzi pojedynczy plik. Warto je znać z nazwy, bo dokładnie tymi słowami mówią komunikaty i interfejsy.</p>
+
+    <div class="diagram-frame">
+      <div class="diagram-hud"><span>stany pliku</span><span>i komendy, które je zmieniają</span></div>
+      <svg viewBox="0 0 620 200" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cztery stany pliku połączone strzałkami: nieśledzony, zmodyfikowany, w indeksie, zacommitowany">
+        <g font-family="IBM Plex Mono, monospace">
+          <rect x="10" y="52" width="126" height="52" rx="8" fill="#1b1e24" stroke="#2a2f38"/>
+          <text x="73" y="76" text-anchor="middle" font-size="11" fill="#8b909b">niesledzony</text>
+          <text x="73" y="92" text-anchor="middle" font-size="9.5" fill="#8b909b">untracked</text>
+
+          <rect x="167" y="52" width="126" height="52" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="230" y="76" text-anchor="middle" font-size="11" fill="#4fc3c0">zmodyfikowany</text>
+          <text x="230" y="92" text-anchor="middle" font-size="9.5" fill="#8b909b">modified</text>
+
+          <rect x="324" y="52" width="126" height="52" rx="8" fill="#1b1e24" stroke="#4fc3c0"/>
+          <text x="387" y="76" text-anchor="middle" font-size="11" fill="#4fc3c0">w indeksie</text>
+          <text x="387" y="92" text-anchor="middle" font-size="9.5" fill="#8b909b">staged</text>
+
+          <rect x="481" y="52" width="126" height="52" rx="8" fill="#1b1e24" stroke="#e8a33d"/>
+          <text x="544" y="76" text-anchor="middle" font-size="11" fill="#e8a33d">zacommitowany</text>
+          <text x="544" y="92" text-anchor="middle" font-size="9.5" fill="#8b909b">committed</text>
+
+          <path d="M 140 68 L 161 68" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 154 63 L 164 68 L 154 73 Z" fill="#8b909b"/>
+          <path d="M 297 68 L 318 68" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 311 63 L 321 68 L 311 73 Z" fill="#8b909b"/>
+          <path d="M 454 68 L 475 68" stroke="#8b909b" stroke-width="2"/>
+          <path d="M 468 63 L 478 68 L 468 73 Z" fill="#8b909b"/>
+          <text x="150" y="42" text-anchor="middle" font-size="10" fill="#ecebe4">add</text>
+          <text x="307" y="42" text-anchor="middle" font-size="10" fill="#ecebe4">add</text>
+          <text x="464" y="42" text-anchor="middle" font-size="10" fill="#ecebe4">commit</text>
+
+          <path d="M 387 118 C 387 150, 230 150, 230 122" stroke="#9c82d8" stroke-width="2" fill="none"/>
+          <path d="M 225 130 L 230 119 L 235 130 Z" fill="#9c82d8"/>
+          <text x="308" y="160" text-anchor="middle" font-size="10" fill="#9c82d8">restore --staged</text>
+
+          <path d="M 544 118 C 544 176, 230 178, 230 124" stroke="#9c82d8" stroke-width="2" fill="none"/>
+          <path d="M 225 132 L 230 121 L 235 132 Z" fill="#9c82d8"/>
+          <text x="420" y="192" text-anchor="middle" font-size="10" fill="#9c82d8">edycja pliku wraca do &#8222;zmodyfikowany&#8221;</text>
+        </g>
+      </svg>
+      <div class="diagram-caption">Ścieżka w prawo to <code>add</code> i <code>commit</code>. Powroty w lewo to <code>restore</code> — albo po prostu edycja pliku.</div>
+    </div>
+
+    <p>Dwie rzeczy w tym rysunku bywają zaskoczeniem. Po pierwsze, <strong>„zacommitowany” nie jest stanem końcowym</strong> — wystarczy dotknąć pliku w edytorze i wraca on do „zmodyfikowany”, choć w commicie oczywiście zostaje. Po drugie, plik nieśledzony wchodzi do gita dokładnie tą samą komendą co zmiana w pliku już śledzonym. <code>add</code> nie ma dwóch trybów: zawsze znaczy „zapamiętaj bieżącą treść tej ścieżki w indeksie”.</p>
+
+    <p>Jest jeszcze piąty stan, celowo pominięty na rysunku: <strong>ignorowany</strong>. Plik pasujący do wzorca w <code>.gitignore</code> jest nieśledzony i git przestaje o nim wspominać. Nie znaczy to jednak, że nie da się go dodać — <code>add</code> z podaną wprost ścieżką zignoruje ignorowanie. Ta asymetria bywa źródłem zdziwienia i wraca w Rozdziale 7.</p>
+  </div>
+
+  <div class="panel practice">
+    <div class="panel-label">Z praktyki</div>
+    <p>W IDE trzy drzewa też istnieją, tylko nazywają się inaczej. Panel zmian pokazuje zwykle katalog roboczy, a zaznaczenie pliku przed commitem to <code>add</code> wykonany za Ciebie w tle. Kłopot polega na tym, że część interfejsów robi <code>add</code> dopiero w chwili kliknięcia „Commit” — więc problem z tego rozdziału tam nie występuje — a część zapamiętuje zaznaczenie wcześniej, i wtedy występuje dokładnie tak samo jak w terminalu.</p>
+    <p>Jeśli nie wiesz, jak zachowuje się Twój, sprawdź to raz i zapamiętaj: dodaj plik, zmień go, zacommituj i zobacz, czy ostatnia zmiana weszła.</p>
+  </div>
+
+  <div class="panel glossary">
+    <div class="panel-label">Słowniczek</div>
+    <dl>
+      <dt>katalog roboczy (working tree)</dt><dd>Pliki widoczne dla edytora i dla systemu. Jedyna warstwa, którą widać spoza gita.</dd>
+      <dt>index / staging area / cache</dt><dd>Trzy nazwy jednego pliku <code>.git/index</code>: listy ścieżek ze skrótami treści, która stanie się następnym commitem.</dd>
+      <dt>HEAD</dt><dd>Wskaźnik na commit, względem którego git liczy zmiany. Zwykle wskazuje na gałąź, a ta na commit.</dd>
+      <dt>staged / unstaged</dt><dd>Zmiana zapisana już w indeksie / zmiana istniejąca tylko w katalogu roboczym.</dd>
+    </dl>
+  </div>
+
+  <div class="next">
+    <div class="panel-label" style="color:var(--violet);">Co dalej</div>
+    <p>Wiesz już, skąd bierze się treść commita. Następny rozdział pokazuje, czym ten commit właściwie jest, gdy już powstanie — i dlaczego nie zawiera tego, czego prawie wszyscy się po nim spodziewają, czyli listy zmian.</p>
+  </div>
 
   <div class="deeper">
     <div class="deeper-label">Idź głębiej</div>
