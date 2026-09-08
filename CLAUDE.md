@@ -49,16 +49,19 @@ generowanych (auto-spisy, szablonowanie), które trzeba by przebudowywać przy
 każdej zmianie treści. `dev/scaffold.py` tworzy **brakujące** strony raz
 i nigdy nie rusza istniejących — to szkieletownik, nie krok budowania.
 
-## Repozytorium jest prywatne i offline
+## Repozytorium i publikacja
 
-Repozytorium prywatne (`bartoszskrzypiec/git-book`), bez GitHub Pages.
-Dwadzieścia sześć stron otwiera się prosto z dysku (`file://`) — nie ma tu
-ani WebGL-a, ani canvasu, ani rastrów. Trzynaście stron niesie widget
-`.gitviz` i te wymagają serwowania po http, bo widget jest modułem ES
-(patrz „Bez systemu budowania" niżej).
+Repo: `bartoszskrzypiec/git-book`, publiczne, live pod
+https://bartoszskrzypiec.github.io/git-book/ (Pages z `main` / root,
+`.nojekyll` w repo). Książka jest wymieniona na stronie startowej
+`learning-materials` razem z resztą rodziny.
 
-Nie dodawaj tej książki do `learning-materials/index.html` ani nigdzie
-indziej w publicznych repo rodziny.
+**Wszystkie 39 stron otwiera się także prosto z dysku** (`file://`): nie ma
+tu ani WebGL-a, ani canvasu, ani rastrów, a silnik widgetów jest skryptem
+klasycznym, nie modułem ES — właśnie po to.
+
+Publiczność repozytorium czyni regułę „zero treści firmowych" z góry tego
+pliku warunkiem twardym, nie preferencją.
 
 ## Konwencje treści
 
@@ -107,18 +110,20 @@ widać, o czym mowa.
 Czyste statyczne HTML/CSS/JS. Bez npm, bez `package.json`, bez bundlera, bez
 testów jednostkowych, bez lintera. Żeby „uruchomić", otwórz plik.
 
-Jedyny wyjątek od „otwórz i działa": strona z widgetem `.gitviz` ładuje
-`gitgraph.js` jako **moduł ES**, a moduły są pobierane z kontrolą CORS.
-Strona spod `file://` ma nieprzezroczyste pochodzenie (`null`), więc
-przeglądarka taki import blokuje — tak samo jak w `atmosfera_chmury_book`
-i `optyka_book`, gdzie dotyczy to widgetów 3D. **Strony z widgetem trzeba
-więc serwować po http**, choćby przez `python -m http.server`.
+Bez wyjątków: **każda strona działa też spod `file://`**, razem z widgetami.
+`gitgraph.js` i `scenarios.js` są **skryptami klasycznymi**, nie modułami ES,
+i to jest decyzja świadoma. Pierwsza wersja była modułem — a moduły pobierane
+spod `file://` blokuje CORS, bo taka strona ma nieprzezroczyste pochodzenie.
+Skutek był taki, że książka otwarta z dysku traciła wszystkie widgety.
+Nie zamieniaj tego z powrotem na `import`/`export`.
 
-Gdy import jest zablokowany, widget zostawia swój blok
-`.gitviz__fallback` i **strona pozostaje kompletna bez niego**. To jest
-warunek, nie życzenie: żaden akapit nie może zależeć od tego, że widget
-zadziałał. Trzynaście stron niesie widget; pozostałe dwadzieścia sześć
-czyta się z dysku bez żadnych zastrzeżeń.
+Kolejność ładowania ma znaczenie: `scenarios.js` **przed** `gitgraph.js`,
+bo silnik czyta scenariusze z globalnej przestrzeni `GITBOOK` w chwili
+wczytania. `dev/scaffold.py sprawdz` pilnuje obecności obu i ich kolejności.
+
+Gdyby skrypt się nie wczytał, widget zostawia swój blok `.gitviz__fallback`
+i **strona pozostaje kompletna bez niego**. To jest warunek, nie życzenie:
+żaden akapit nie może zależeć od tego, że widget zadziałał.
 
 ## Struktura
 
@@ -136,7 +141,7 @@ dev/spis.json                           — struktura książki, źródło prawd
 dev/scaffold.py                         — szkielet | sprawdz
 dev/slowa.py                            — licznik prozy i wizualizacji
 dev/stan.py                             — synchronizuje znaczniki w spisie treści
-dev/test-gitgraph.mjs                   — test silnika bez przeglądarki
+dev/test-gitgraph.js                    — test silnika bez przeglądarki
 dev/sprawdz-svg.py                      — geometria diagramów (viewBox)
 dev/wstaw.py                            — wstawia treść w miejsce znacznika
 dev/zakazane.txt                        — lista zakazanych słów (w .gitignore)
@@ -192,13 +197,12 @@ logiki:
 </div>
 ```
 
-na końcu strony, raz:
+na końcu strony, raz — w tej kolejności, bez żadnego kodu na stronie
+(silnik montuje się sam na `DOMContentLoaded`, tak jak `interactive.js`):
 
 ```html
-<script type="module">
-  import { montuj } from '../assets/gitgraph.js';
-  montuj();
-</script>
+<script src="../assets/scenarios.js"></script>
+<script src="../assets/gitgraph.js"></script>
 ```
 
 Zasady:
@@ -218,7 +222,7 @@ Zasady:
 1. `python dev/scaffold.py sprawdz` — musi przejść czysto. Bramkuje długość,
    nawigację, `EXT OF`, bloki obowiązkowe, domknięcie `<div>`, scenariusze
    widgetów i **treści firmowe**.
-2. `node dev/test-gitgraph.mjs` po każdej zmianie w silniku albo
+2. `node dev/test-gitgraph.js` po każdej zmianie w silniku albo
    scenariuszach. Sprawdza determinizm i to, że cofanie wraca do migawki.
 3. `node --check` na dotkniętych plikach JS.
 4. Otwórz stronę z dysku: brak błędów w konsoli, brak przewijania w poziomie

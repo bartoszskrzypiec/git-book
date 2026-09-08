@@ -10,22 +10,11 @@ jedno pytanie.
 
 ## Jak czytać
 
-Najprościej — serwuj katalog i otwórz `index.html`:
+Online: <https://bartoszskrzypiec.github.io/git-book/>
 
-```
-cd git_book
-python -m http.server 8000
-```
-
-potem <http://localhost:8000>. W VS Code to samo daje rozszerzenie
-Live Server.
-
-Można też otworzyć `index.html` wprost z dysku i większość książki będzie
-działać: zero rastrów, zero WebGL-a, zero zależności. Nie zadziałają
-natomiast **interaktywne widgety `.gitviz`** — są modułem ES, a moduły
-pobierane spod `file://` są blokowane przez CORS. Wtedy w miejscu widgetu
-pojawia się blok zastępczy, a rozdział jest kompletny bez niego: wszystko,
-co widget pokazuje, jest też opisane w tekście obok.
+Albo otwórz `index.html` prosto z dysku — **cała książka działa bez
+serwera, razem z interaktywnymi widgetami**. Zero rastrów, zero WebGL-a,
+zero zależności, żadnego kroku budowania.
 
 ## Co jest w środku poza tekstem
 
@@ -45,7 +34,8 @@ python dev/scaffold.py szkielet   # tworzy brakujące strony, istniejących nie 
 python dev/scaffold.py sprawdz    # brama: linki, nawigacja, długość, widgety, treść
 python dev/slowa.py               # licznik prozy i wizualizacji
 python dev/stan.py                # znaczniki "gotowy" w spisie treści
-node dev/test-gitgraph.mjs        # test silnika bez przeglądarki
+node dev/test-gitgraph.js         # test silnika bez przeglądarki
+python dev/sprawdz-svg.py         # geometria diagramow (viewBox)
 ```
 
 Konwencje i reguły pisania: `CLAUDE.md`.
@@ -55,4 +45,7 @@ Konwencje i reguły pisania: `CLAUDE.md`.
 Książka jest w całości generyczna. Opisuje gita, GitLaba i wzorce spotykane
 w dużych repozytoriach — bez odwołań do jakiegokolwiek konkretnego
 pracodawcy, jego narzędzi, ścieżek czy komunikatów. `dev/scaffold.py sprawdz`
-pilnuje tego automatycznie.
+pilnuje tego automatycznie i nie przepuszcza commita, jeśli coś takiego się
+pojawi.
+
+Część rodziny: <https://bartoszskrzypiec.github.io/learning-materials/>

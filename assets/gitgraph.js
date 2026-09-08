@@ -17,13 +17,17 @@
    Dzieki temu "cofnij n razy" daje dokladnie to samo, co "zacznij od nowa",
    a to jest wlasnie ten warunek, ktory najlatwiej zlamac w takim widgecie.
 
-   Zaleznosci: zadne. Modul ES, bez WebGL, bez canvasu. Strona z widgetem
-   musi byc serwowana po http — moduly pobierane spod file:// blokuje CORS,
-   bo taka strona ma nieprzezroczyste pochodzenie. Gdy import nie przejdzie,
-   widget zostawia swoj .gitviz__fallback i rozdzial pozostaje kompletny.
+   Zaleznosci: zadne. SKRYPT KLASYCZNY (nie modul ES), bez WebGL, bez
+   canvasu — dzieki temu dziala tak samo po http i spod file://. Pierwsza
+   wersja byla modulem i widgety nie ruszaly z dysku, bo moduly pobierane
+   spod file:// blokuje CORS. Gdy skrypt sie nie zaladuje, widget zostawia
+   swoj .gitviz__fallback i rozdzial pozostaje kompletny.
    ============================================================ */
 
-import { SCENARIUSZE } from './scenarios.js';
+// scenarios.js musi byc zaladowany PRZED tym plikiem. Nazwa jest inna niz
+// tam, bo dwa skrypty klasyczne dziela globalny zakres leksykalny i
+// powtorzone "const SCENARIUSZE" byloby bledem skladni.
+const SCEN = (globalThis.GITBOOK && globalThis.GITBOOK.SCENARIUSZE) || {};
 
 /* ---------------------------------------------------------------- SHA
 
@@ -391,8 +395,16 @@ const KOL = { obiekt: '#e8a33d', ref: '#4fc3c0', przepis: '#9c82d8',
   tlo: '#20242c', panel: '#1b1e24' };
 
 const SZER_KOL = 128;   // odstep miedzy pokoleniami commitow
-const WYS_PASA = 74;    // odstep miedzy pasmami (galeziami)
-const R = 19;           // promien wezla
+// Odstep miedzy pasmami musi pomiescic to, co wisi NAD wezlem (stos etykiet
+// refow plus odznaka HEAD, po 19 px kazda) i to, co wisi POD nim (opis
+// commita). Przy 74 px etykiety dolnego pasma ladowaly na opisie gornego -
+// wyszlo dopiero na zrzucie ekranu, bo SVG niczego nie przycina.
+const WYS_PASA = 112;   // odstep miedzy pasmami (galeziami)
+// Promien wezla musi pomiescic siedmioznakowy skrot: 7 znakow * 9 px * 0,6
+// szerokosci znaku w monospace to ~38 px, wiec srednica 42 px daje zapas.
+// Przy r=19 i 10 px tekst wychodzil poza okrag - widac to bylo dopiero na
+// zrzucie ekranu, bo w SVG nic nie przycina.
+const R = 21;           // promien wezla
 
 function esc(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -466,7 +478,9 @@ function rysujRepo(repo, opcje) {
   const { commits, gl, pasmo, maxGl } = uklad(repo);
   const refy = refyDla(repo);
   const headSha = shaHEAD(repo);
-  const x = (s) => opcje.x0 + 40 + gl[s] * SZER_KOL;
+  // Lewy margines: opis commita jest wysrodkowany pod wezlem i bywa szerszy
+// od niego, wiec przy 40 px pierwszy opis wychodzil poza lewa krawedz.
+  const x = (s) => opcje.x0 + 66 + gl[s] * SZER_KOL;
   const y = (s) => opcje.y0 + 46 + pasmo[s] * WYS_PASA;
   const czesci = [];
 
@@ -493,7 +507,7 @@ function rysujRepo(repo, opcje) {
     czesci.push(`<g opacity="${przezr}">`
       + `<circle cx="${cx}" cy="${cy}" r="${R}" fill="${KOL.panel}" stroke="${kolor}" stroke-width="2"/>`
       + `<text x="${cx}" y="${cy + 4}" text-anchor="middle" font-family="IBM Plex Mono, monospace"`
-      + ` font-size="10" fill="${kolor}">${esc(c.sha)}</text>`
+      + ` font-size="9" fill="${kolor}">${esc(c.sha)}</text>`
       + `<text x="${cx}" y="${cy + R + 15}" text-anchor="middle" font-family="IBM Plex Mono, monospace"`
       + ` font-size="9.5" fill="${KOL.dim}">${esc(skrocOpis(c.msg))}</text>`
       + '</g>');
@@ -531,7 +545,7 @@ function rysujRepo(repo, opcje) {
 
 function skrocOpis(msg) {
   const czysty = String(msg);
-  return czysty.length > 18 ? czysty.slice(0, 17) + '…' : czysty;
+  return czysty.length > 15 ? czysty.slice(0, 14) + '…' : czysty;
 }
 
 function rysuj(stan) {
@@ -555,7 +569,7 @@ function rysuj(stan) {
     szerKol = Math.max(szerKol, o.maxGl);
   }
 
-  const szerokosc = 60 + (szerKol + 1) * SZER_KOL;
+  const szerokosc = 92 + (szerKol + 1) * SZER_KOL;
   return `<svg viewBox="0 0 ${szerokosc} ${wysokosc}" xmlns="http://www.w3.org/2000/svg"`
     + ' role="img" aria-label="Graf commitow">' + panele.join('\n') + '</svg>';
 }
@@ -569,9 +583,9 @@ const ETYKIETY = {
   fetch: 'git fetch', push: 'git push', pushForce: 'git push --force'
 };
 
-export function createGitGraph(host) {
+function createGitGraph(host) {
   const nazwa = host.dataset.gitScenario;
-  const scen = SCENARIUSZE[nazwa];
+  const scen = SCEN[nazwa];
   if (!scen) return { ok: false };
 
   // Stan poczatkowy budujemy tymi samymi operacjami co kroki — jedna sciezka
@@ -647,7 +661,7 @@ export function createGitGraph(host) {
 }
 
 /** Montuje wszystkie widgety na stronie. Strony wolaja tylko to. */
-export function montuj(root = document) {
+function montuj(root = document) {
   root.querySelectorAll('.gitviz[data-git-scenario]').forEach((host) => {
     try {
       createGitGraph(host);
@@ -660,7 +674,20 @@ export function montuj(root = document) {
   });
 }
 
-/* Wystawione dla dev/test-gitgraph.mjs. Model nie dotyka DOM-u, wiec da sie
+/* Wystawione dla dev/test-gitgraph.js. Model nie dotyka DOM-u, wiec da sie
    przejsc kazdy scenariusz w node i sprawdzic, czy sie nie wywraca i czy
    jest deterministyczny — bez przegladarki. */
-export { ETYKIETY, wykonaj, pustyStan, rysuj, skrot };
+globalThis.GITBOOK = globalThis.GITBOOK || {};
+Object.assign(globalThis.GITBOOK, {
+  createGitGraph, montuj, ETYKIETY, wykonaj, pustyStan, rysuj, skrot
+});
+
+// Automatyczny montaz. Strona wstawia widget samym HTML-em i nie niesie ani
+// jednej linii logiki — tak samo jak interactive.js z toolkitu.
+if (typeof document !== 'undefined') {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function () { montuj(); });
+  } else {
+    montuj();
+  }
+}

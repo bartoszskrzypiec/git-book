@@ -17,6 +17,11 @@
    moglby osiagnac zwyklymi komendami.
 
    Nazwy galezi i zgloszen sa fikcyjne (ABC-1234). Patrz CLAUDE.md.
+
+   To jest SKRYPT KLASYCZNY, nie modul ES. Powod jest jeden i praktyczny:
+   moduly pobierane spod file:// blokuje CORS, wiec ksiazka otwarta prosto
+   z dysku tracila widgety. Klasyczny skrypt dziala tak samo po http i z
+   dysku. Eksport idzie przez globalna przestrzen GITBOOK.
    ============================================================ */
 
 const PODSTAWA = [
@@ -24,7 +29,7 @@ const PODSTAWA = [
   { op: 'commit', args: { msg: 'Wczytywanie sceny' } }
 ];
 
-export const SCENARIUSZE = {
+const SCENARIUSZE = {
 
   /* R.2 — commit jest obiektem: lancuch rosnie, nic sie nie nadpisuje. */
   lancuch: {
@@ -225,3 +230,8 @@ export const SCENARIUSZE = {
     argumenty: { fetch: {}, merge: { nazwa: 'origin/master' }, rebase: { na: 'origin/master' } }
   }
 };
+
+// Jedyny punkt styku ze swiatem: nazwana przestrzen zamiast modulu.
+// W node (dev/test-gitgraph.js) dziala tak samo, bo globalThis jest wszedzie.
+globalThis.GITBOOK = globalThis.GITBOOK || {};
+globalThis.GITBOOK.SCENARIUSZE = SCENARIUSZE;

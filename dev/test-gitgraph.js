@@ -1,6 +1,6 @@
 /* Test silnika bez przegladarki.
  *
- *     node dev/test-gitgraph.mjs
+ *     node dev/test-gitgraph.js
  *
  * Sprawdza cztery rzeczy, po jednej na kazdy sposob, w jaki taki widget
  * potrafi sie zepsuc po cichu:
@@ -16,8 +16,12 @@
  *      zamiast wracac do migawki.
  */
 
-import { SCENARIUSZE } from '../assets/scenarios.js';
-import { wykonaj, pustyStan, rysuj, createGitGraph } from '../assets/gitgraph.js';
+// Oba pliki sa skryptami klasycznymi i wystawiaja sie przez globalThis,
+// wiec w node wystarczy je wczytac w tej samej kolejnosci co na stronie.
+require('../assets/scenarios.js');
+require('../assets/gitgraph.js');
+const { SCENARIUSZE } = globalThis.GITBOOK;
+const { wykonaj, pustyStan, rysuj, createGitGraph } = globalThis.GITBOOK;
 
 /* Atrapa DOM-u — tyle, ile dotyka createGitGraph. Nie udaje przegladarki;
  * ma tylko sprawdzic okablowanie: czy strzalki chodza w obie strony, czy

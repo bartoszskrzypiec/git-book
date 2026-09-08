@@ -332,7 +332,14 @@ def cmd_sprawdz():
         if not widgety:
             continue
         if 'gitgraph.js' not in html:
-            problems.append(f'BRAK SILNIKA {rel}: sa widgety .gitviz, brak importu gitgraph.js')
+            problems.append(f'BRAK SILNIKA {rel}: sa widgety .gitviz, brak gitgraph.js')
+        elif 'scenarios.js' not in html:
+            problems.append(f'BRAK SCENARIUSZY {rel}: gitgraph.js bez scenarios.js')
+        elif html.index('scenarios.js') > html.index('gitgraph.js'):
+            # gitgraph.js czyta scenariusze z globalnej przestrzeni w chwili
+            # wczytania, wiec odwrotna kolejnosc daje pusty zestaw i widget
+            # bez slowa pokazuje blok zastepczy.
+            problems.append(f'ZLA KOLEJNOSC {rel}: scenarios.js musi byc przed gitgraph.js')
         for atrybuty in widgety:
             m = re.search(r'data-git-scenario="([^"]+)"', atrybuty)
             if not m:
