@@ -17,8 +17,10 @@
    Dzieki temu "cofnij n razy" daje dokladnie to samo, co "zacznij od nowa",
    a to jest wlasnie ten warunek, ktory najlatwiej zlamac w takim widgecie.
 
-   Zaleznosci: zadne. Modul ES, bez WebGL, bez canvasu — dziala takze
-   z file://, wiec cala ksiazka otwiera sie z dysku.
+   Zaleznosci: zadne. Modul ES, bez WebGL, bez canvasu. Strona z widgetem
+   musi byc serwowana po http — moduly pobierane spod file:// blokuje CORS,
+   bo taka strona ma nieprzezroczyste pochodzenie. Gdy import nie przejdzie,
+   widget zostawia swoj .gitviz__fallback i rozdzial pozostaje kompletny.
    ============================================================ */
 
 import { SCENARIUSZE } from './scenarios.js';

@@ -10,10 +10,22 @@ jedno pytanie.
 
 ## Jak czytać
 
-Otwórz `index.html` prosto z dysku. Nic tutaj nie wymaga serwera:
-zero rastrów, zero WebGL-a, zero zależności. Widgety `.gitviz` są modułem
-ES ładowanym lokalnie, a każda strona jest kompletna także wtedy, gdy widget
-się nie uruchomi.
+Najprościej — serwuj katalog i otwórz `index.html`:
+
+```
+cd git_book
+python -m http.server 8000
+```
+
+potem <http://localhost:8000>. W VS Code to samo daje rozszerzenie
+Live Server.
+
+Można też otworzyć `index.html` wprost z dysku i większość książki będzie
+działać: zero rastrów, zero WebGL-a, zero zależności. Nie zadziałają
+natomiast **interaktywne widgety `.gitviz`** — są modułem ES, a moduły
+pobierane spod `file://` są blokowane przez CORS. Wtedy w miejscu widgetu
+pojawia się blok zastępczy, a rozdział jest kompletny bez niego: wszystko,
+co widget pokazuje, jest też opisane w tekście obok.
 
 ## Co jest w środku poza tekstem
 

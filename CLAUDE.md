@@ -51,9 +51,11 @@ i nigdy nie rusza istniejących — to szkieletownik, nie krok budowania.
 
 ## Repozytorium jest prywatne i offline
 
-Lokalne `git init`, **bez remote'a**. Bez GitHuba, bez GitHub Pages. Strony
-otwiera się prosto z dysku (`file://`) — nic tu nie wymaga serwera, bo nie ma
-ani WebGL-a, ani canvasu, a jedyny moduł ES ładuje się lokalnie.
+Repozytorium prywatne (`bartoszskrzypiec/git-book`), bez GitHub Pages.
+Dwadzieścia sześć stron otwiera się prosto z dysku (`file://`) — nie ma tu
+ani WebGL-a, ani canvasu, ani rastrów. Trzynaście stron niesie widget
+`.gitviz` i te wymagają serwowania po http, bo widget jest modułem ES
+(patrz „Bez systemu budowania" niżej).
 
 Nie dodawaj tej książki do `learning-materials/index.html` ani nigdzie
 indziej w publicznych repo rodziny.
@@ -106,11 +108,17 @@ Czyste statyczne HTML/CSS/JS. Bez npm, bez `package.json`, bez bundlera, bez
 testów jednostkowych, bez lintera. Żeby „uruchomić", otwórz plik.
 
 Jedyny wyjątek od „otwórz i działa": strona z widgetem `.gitviz` ładuje
-`gitgraph.js` jako moduł ES. Moduły z `file://` działają, bo import jest
-względny i lokalny — ale jeśli przeglądarka go zablokuje, widget zostawia
-swój blok `.gitviz__fallback` i **strona jest kompletna bez niego**. To jest
+`gitgraph.js` jako **moduł ES**, a moduły są pobierane z kontrolą CORS.
+Strona spod `file://` ma nieprzezroczyste pochodzenie (`null`), więc
+przeglądarka taki import blokuje — tak samo jak w `atmosfera_chmury_book`
+i `optyka_book`, gdzie dotyczy to widgetów 3D. **Strony z widgetem trzeba
+więc serwować po http**, choćby przez `python -m http.server`.
+
+Gdy import jest zablokowany, widget zostawia swój blok
+`.gitviz__fallback` i **strona pozostaje kompletna bez niego**. To jest
 warunek, nie życzenie: żaden akapit nie może zależeć od tego, że widget
-zadziałał.
+zadziałał. Trzynaście stron niesie widget; pozostałe dwadzieścia sześć
+czyta się z dysku bez żadnych zastrzeżeń.
 
 ## Struktura
 
@@ -129,6 +137,8 @@ dev/scaffold.py                         — szkielet | sprawdz
 dev/slowa.py                            — licznik prozy i wizualizacji
 dev/stan.py                             — synchronizuje znaczniki w spisie treści
 dev/test-gitgraph.mjs                   — test silnika bez przeglądarki
+dev/sprawdz-svg.py                      — geometria diagramów (viewBox)
+dev/wstaw.py                            — wstawia treść w miejsce znacznika
 dev/zakazane.txt                        — lista zakazanych słów (w .gitignore)
 ```
 
